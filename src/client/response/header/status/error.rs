@@ -1,4 +1,4 @@
 pub enum Error {
-    Undefined,
     Decode,
+    Undefined,
 }
