@@ -9,7 +9,11 @@ keywords = ["gemini", "gemini-protocol", "gtk", "gio", "client"]
 categories = ["development-tools", "network-programming"]
 repository = "https://github.com/YGGverse/ggemini"
 
+[dependencies.gio]
+package = "gio"
+version = "0.20.4"
+
 [dependencies.glib]
 package = "glib"
 version = "0.20.4"
-#features = ["v2_66"]
+features = ["v2_66"]
