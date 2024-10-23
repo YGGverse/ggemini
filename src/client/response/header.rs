@@ -9,7 +9,7 @@ pub use mime::Mime;
 pub use status::Status;
 
 pub struct Header {
-    status: Status,
+    status: Option<Status>,
     meta: Option<Meta>,
     mime: Option<Mime>,
     // @TODO
@@ -38,15 +38,15 @@ impl Header {
                                               // let language = language::from_header(buffer); @TODO
 
         let status = match status::from_header(buffer) {
-            Ok(result) => result,
-            Err(_) => return Err(Error::Status),
+            Ok(result) => Some(result),
+            Err(_) => None,
         };
 
         Ok(Self { status, meta, mime })
     }
 
     // Getters
-    pub fn status(&self) -> &Status {
+    pub fn status(&self) -> &Option<Status> {
         &self.status
     }
 
