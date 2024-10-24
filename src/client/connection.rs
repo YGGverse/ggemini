@@ -1,3 +1,5 @@
-pub mod input_stream;
+pub mod input;
+
+pub use input::Input;
 
 // @TODO
