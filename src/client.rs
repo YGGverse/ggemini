@@ -15,7 +15,7 @@ use glib::Uri;
 /// 3. read response
 /// 4. close connection
 /// 5. return `Result<Response, Error>` to `callback` function
-pub fn simple_socket_request_async(
+pub fn single_socket_request_async(
     uri: Uri,
     callback: impl FnOnce(Result<Response, Error>) + 'static,
 ) {

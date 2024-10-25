@@ -17,7 +17,7 @@ cargo add ggemini
 ## `client`
 
 
-#### `client::simple_socket_request_async`
+#### `client::single_socket_request_async`
 
 High-level API to make async socket request and auto-close connection on complete.
 
@@ -29,7 +29,7 @@ use glib::{Uri, UriFlags};
 // Parse URL string to valid URI
 match Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE) {
     // Begin async request
-    Ok(uri) => ggemini::client::simple_socket_request_async(uri, |result| match result {
+    Ok(uri) => ggemini::client::single_socket_request_async(uri, |result| match result {
         // Process response
         Ok(response) => {
             // Expect success status
