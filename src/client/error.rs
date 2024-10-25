@@ -1,5 +1,6 @@
 pub enum Error {
+    Close,
     Connection,
-    Response,
     Request,
+    Response,
 }

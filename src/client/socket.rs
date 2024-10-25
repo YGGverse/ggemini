@@ -13,6 +13,7 @@ use glib::Uri;
 
 pub struct Socket {
     client: SocketClient,
+    default_port: u16,
 }
 
 impl Socket {
@@ -26,7 +27,10 @@ impl Socket {
         client.set_tls_validation_flags(TlsCertificateFlags::INSECURE);
         client.set_tls(true);
 
-        Self { client }
+        Self {
+            client,
+            default_port: DEFAULT_PORT,
+        }
     }
 
     // Actions
@@ -38,7 +42,7 @@ impl Socket {
     ) {
         self.client.connect_to_uri_async(
             uri.to_str().as_str(),
-            DEFAULT_PORT,
+            self.default_port,
             match cancelable.clone() {
                 Some(value) => Some(value),
                 None => None::<Cancellable>,
@@ -53,9 +57,18 @@ impl Socket {
         );
     }
 
+    // Setters
+
+    /// Set default port for socket connections (1965 by default)
+    pub fn set_default_port(&mut self, default_port: u16) {
+        self.default_port = default_port;
+    }
+
     // Getters
 
-    /// Return ref to `gio::SocketClient` GObject
+    /// Get reference to `gio::SocketClient`
+    ///
+    /// https://docs.gtk.org/gio/class.SocketClient.html
     pub fn client(&self) -> &SocketClient {
         self.client.as_ref()
     }

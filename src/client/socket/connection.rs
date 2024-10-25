@@ -16,61 +16,62 @@ pub struct Connection {
 impl Connection {
     // Constructors
 
+    /// Create new `Self` from [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     pub fn new_from(connection: SocketConnection) -> Self {
         Self { connection }
     }
 
     // Actions
 
-    /// MIddle-level API to make single async socket request for current connection:
+    /// Middle-level API to make async socket request for current connection:
     ///
-    /// 1. send `Uri` request to the ouput stream;
-    /// 2. write entire input stream into the new `Vec<u8>` buffer on success;
-    /// 3. close current connection if callback function does not prevent that action by return.
+    /// 1. send request for [Uri](https://docs.gtk.org/glib/struct.Uri.html)
+    ///    to the ouput [OutputStream](https://docs.gtk.org/gio/class.OutputStream.html);
+    /// 2. write entire [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
+    ///    into `Vec<u8>` buffer on success;
+    /// 3. return taken `Self` with `Result(Vec<u8>, Error)` on complete.
     pub fn request_async(
         self,
         uri: Uri,
         cancelable: Option<Cancellable>,
         priority: Option<Priority>,
         chunk: Option<usize>,
-        callback: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
+        callback: impl FnOnce(Self, Result<Vec<u8>, Error>) + 'static,
     ) {
-        // Send request
         Output::new_from_stream(self.connection.output_stream()).write_async(
             &Bytes::from(gformat!("{}\r\n", uri.to_str()).as_bytes()),
             cancelable.clone(),
             priority,
             move |output| match output {
                 Ok(_) => {
-                    // Read response
                     Input::new_from_stream(self.connection.input_stream()).read_all_async(
                         cancelable.clone(),
                         priority,
                         chunk,
                         move |input| {
-                            // Apply callback function
-                            callback(match input {
-                                Ok(buffer) => Ok(buffer.to_utf8()),
-                                Err(error) => Err(match error {
-                                    input::Error::BufferOverflow => Error::InputBufferOverflow,
-                                    input::Error::BufferWrite => Error::InputBufferWrite,
-                                    input::Error::StreamChunkRead => Error::InputStreamChunkRead,
-                                }),
-                            });
-
-                            // Close connection if callback act does not prevent that
-                            self.close_async(cancelable, priority, |_| {}); // @TODO
+                            callback(
+                                self,
+                                match input {
+                                    Ok(buffer) => Ok(buffer.to_utf8()),
+                                    Err(error) => Err(match error {
+                                        input::Error::BufferOverflow => Error::InputBufferOverflow,
+                                        input::Error::BufferWrite => Error::InputBufferWrite,
+                                        input::Error::StreamChunkRead => {
+                                            Error::InputStreamChunkRead
+                                        }
+                                    }),
+                                },
+                            );
                         },
                     );
                 }
                 Err(error) => {
-                    // Apply callback function
-                    callback(Err(match error {
-                        output::Error::StreamWrite => Error::OutputStreamWrite,
-                    }));
-
-                    // Close connection if callback act does not prevent that
-                    self.close_async(cancelable, priority, |_| {}); // @TODO
+                    callback(
+                        self,
+                        Err(match error {
+                            output::Error::StreamWrite => Error::OutputStreamWrite,
+                        }),
+                    );
                 }
             },
         );
@@ -79,14 +80,14 @@ impl Connection {
     /// Asynchronously close current connection
     ///
     /// Options:
-    /// * `cancellable` https://docs.gtk.org/gio/class.Cancellable.html (`None::<&Cancellable>` by default)
-    /// * `priority` e.g. https://docs.gtk.org/glib/const.PRIORITY_DEFAULT.html (`Priority::DEFAULT` by default)
-    /// * `callback` function to apply on complete
+    /// * `cancellable` see [Cancellable](https://docs.gtk.org/gio/class.Cancellable.html) (`None::<&Cancellable>` by default)
+    /// * `priority` [Priority::DEFAULT](https://docs.gtk.org/glib/const.PRIORITY_DEFAULT.html) by default
+    /// * `callback` optional function to apply on complete or `None` to skip
     pub fn close_async(
-        self,
+        &self,
         cancelable: Option<Cancellable>,
         priority: Option<Priority>,
-        callback: impl FnOnce(Result<(), Error>) + 'static,
+        callback: Option<impl FnOnce(Result<(), Error>) + 'static>,
     ) {
         self.connection.close_async(
             match priority {
@@ -99,16 +100,21 @@ impl Connection {
             }
             .as_ref(),
             |result| {
-                callback(match result {
-                    Ok(_) => Ok(()),
-                    Err(_) => Err(Error::Close),
-                })
+                if let Some(call) = callback {
+                    call(match result {
+                        Ok(_) => Ok(()),
+                        Err(_) => Err(Error::Close),
+                    })
+                }
             },
         );
     }
 
     // Getters
 
+    /// Get reference to `gio::SocketConnection`
+    ///
+    /// https://docs.gtk.org/gio/class.SocketConnection.html
     pub fn connection(&self) -> &SocketConnection {
         &self.connection
     }
