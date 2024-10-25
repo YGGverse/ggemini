@@ -31,6 +31,8 @@ impl Input {
 
     /// Synchronously read all bytes from `gio::InputStream` to `input::Buffer`
     ///
+    /// Return `Self` with `buffer` updated on success
+    ///
     /// Options:
     /// * `cancellable` https://docs.gtk.org/gio/class.Cancellable.html
     /// * `chunk` max bytes to read per chunk (256 by default)
@@ -38,7 +40,7 @@ impl Input {
         mut self,
         cancelable: Option<Cancellable>,
         chunk: Option<usize>,
-    ) -> Result<Buffer, Error> {
+    ) -> Result<Self, Error> {
         loop {
             // Continue bytes reading
             match self.stream.read_bytes(
@@ -55,7 +57,7 @@ impl Input {
                 Ok(bytes) => {
                     // No bytes were read, end of stream
                     if bytes.len() == 0 {
-                        return Ok(self.buffer);
+                        return Ok(self);
                     }
 
                     // Save chunk to buffer
@@ -70,9 +72,10 @@ impl Input {
         }
     }
 
-    /// Asynchronously read all bytes from `gio::InputStream` to `input::Buffer`,
+    /// Asynchronously read all bytes from `gio::InputStream` to `input::Buffer`
     ///
-    /// applies `callback` function on last byte reading complete.
+    /// * applies `callback` function on last byte reading complete;
+    /// * return `Self` with `buffer` updated on success
     ///
     /// Options:
     /// * `cancellable` https://docs.gtk.org/gio/class.Cancellable.html (`None::<&Cancellable>` by default)
@@ -84,7 +87,7 @@ impl Input {
         cancelable: Option<Cancellable>,
         priority: Option<Priority>,
         chunk: Option<usize>,
-        callback: impl FnOnce(Result<Buffer, Error>) + 'static,
+        callback: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         // Continue bytes reading
         self.stream.clone().read_bytes_async(
@@ -106,7 +109,7 @@ impl Input {
                     Ok(bytes) => {
                         // No bytes were read, end of stream
                         if bytes.len() == 0 {
-                            return callback(Ok(self.buffer));
+                            return callback(Ok(self));
                         }
 
                         // Save chunk to buffer

@@ -52,7 +52,7 @@ impl Connection {
                             callback(
                                 self,
                                 match input {
-                                    Ok(buffer) => Ok(buffer.to_utf8()),
+                                    Ok(this) => Ok(this.buffer().to_utf8()),
                                     Err(error) => Err(match error {
                                         input::Error::BufferOverflow => Error::InputBufferOverflow,
                                         input::Error::BufferWrite => Error::InputBufferWrite,
