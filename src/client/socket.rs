@@ -59,7 +59,7 @@ impl Socket {
 
     // Setters
 
-    /// Set default port for socket connections (1965 by default)
+    /// Change default port for this socket connections (`1965` by default)
     pub fn set_default_port(&mut self, default_port: u16) {
         self.default_port = default_port;
     }
@@ -70,6 +70,6 @@ impl Socket {
     ///
     /// https://docs.gtk.org/gio/class.SocketClient.html
     pub fn client(&self) -> &SocketClient {
-        self.client.as_ref()
+        &self.client
     }
 }
