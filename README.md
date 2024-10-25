@@ -21,7 +21,7 @@ cargo add ggemini
 
 High-level API to make async socket request and auto-close connection on complete.
 
-Return [Response](#client::response::Response) on success or [Error](#client::Error) enum on failure.
+Return [Response](#client_response_Response) on success or [Error](#client_Error) enum on failure.
 
 ``` rust
 use glib::{Uri, UriFlags};
