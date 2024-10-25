@@ -26,7 +26,7 @@ Return [Response](#clientresponseresponse) on success or [Error](#clienterror) e
 ``` rust
 use glib::{Uri, UriFlags};
 
-// Parse URL string to valid URI
+// Parse URL string to valid Glib URI object
 match Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE) {
     // Begin async request
     Ok(uri) => ggemini::client::single_socket_request_async(uri, |result| match result {
