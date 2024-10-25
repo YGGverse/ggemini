@@ -19,7 +19,7 @@ cargo add ggemini
 
 #### `client::single_socket_request_async`
 
-High-level API to make async socket request and auto-close connection on complete.
+High-level API to make async socket request, auto-close connection on complete.
 
 Return [Response](#clientresponseresponse) on success or [Error](#clienterror) enum on failure
 
@@ -46,7 +46,7 @@ match Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE) {
 
 **Pay attention:**
 
-* Response [Buffer](#clientsocketconnectioninputbufferBuffer) limited to default `capacity` (0x400) and `max_size` (0xfffff). If you want to change these values, use low-level API to setup connection manually.
+* Response [Buffer](#clientsocketconnectioninputbufferBuffer) limited to default `capacity` (`0x400`) and `max_size` (`0xfffff`). If you want to change these values, use low-level API to setup connection manually.
 * To use [Cancelable](https://docs.gtk.org/gio/class.Cancellable.html) or async Priority values, take a look at [connection](#clientsocketconnection) methods.
 
 #### `client::Error`
