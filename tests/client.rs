@@ -5,7 +5,7 @@ fn simple_socket_request_async() {
     // Parse URI
     match Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE) {
         // Begin async request
-        Ok(uri) => ggemini::client::simple_socket_request_async(uri, |response| match response {
+        Ok(uri) => ggemini::client::simple_socket_request_async(uri, |result| match result {
             // Process response
             Ok(response) => {
                 // Expect success status
