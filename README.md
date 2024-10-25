@@ -1,6 +1,6 @@
 # ggemini
 
-[Glib](https://docs.gtk.org/glib/)-oriented client for [Gemini protocol](https://geminiprotocol.net/)
+Glib-oriented client for [Gemini protocol](https://geminiprotocol.net/)
 
 > [!IMPORTANT]
 > Project in development!
