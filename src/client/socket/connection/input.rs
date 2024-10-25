@@ -87,7 +87,7 @@ impl Input {
         cancelable: Option<Cancellable>,
         priority: Option<Priority>,
         chunk: Option<usize>,
-        callback: impl FnOnce(Result<Self, Error>) + 'static,
+        callback: impl FnOnce(Self, Result<(), Error>) + 'static,
     ) {
         // Continue bytes reading
         self.stream.clone().read_bytes_async(
@@ -109,17 +109,17 @@ impl Input {
                     Ok(bytes) => {
                         // No bytes were read, end of stream
                         if bytes.len() == 0 {
-                            return callback(Ok(self));
+                            return callback(self, Ok(()));
                         }
 
                         // Save chunk to buffer
                         match self.buffer.push(bytes) {
                             Err(buffer::Error::Overflow) => {
-                                return callback(Err(Error::BufferOverflow))
+                                return callback(self, Err(Error::BufferOverflow))
                             }
 
                             // Other errors related to write issues @TODO test
-                            Err(_) => return callback(Err(Error::BufferWrite)),
+                            Err(_) => return callback(self, Err(Error::BufferWrite)),
 
                             // Async function, nothing to return yet
                             _ => (),
@@ -128,7 +128,7 @@ impl Input {
                         // Continue bytes reading...
                         self.read_all_async(cancelable, priority, chunk, callback);
                     }
-                    Err(_) => callback(Err(Error::StreamChunkRead)),
+                    Err(_) => callback(self, Err(Error::StreamChunkRead)),
                 }
             },
         );
