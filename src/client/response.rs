@@ -6,25 +6,31 @@ pub use body::Body;
 pub use error::Error;
 pub use header::Header;
 
+use glib::Bytes;
+
 pub struct Response {
     header: Header,
     body: Body,
 }
 
 impl Response {
-    /// Create new `client::Response`
+    /// Create new `Self`
     pub fn new(header: Header, body: Body) -> Self {
         Self { header, body }
     }
 
-    /// Create new `client::Response` from UTF-8 buffer
-    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
-        let header = match Header::from_response(buffer) {
+    /// Construct from [Bytes](https://docs.gtk.org/glib/struct.Bytes.html)
+    ///
+    /// Useful for [Gio::InputStream](https://docs.gtk.org/gio/class.InputStream.html):
+    /// * [read_bytes](https://docs.gtk.org/gio/method.InputStream.read_bytes.html)
+    /// * [read_bytes_async](https://docs.gtk.org/gio/method.InputStream.read_bytes_async.html)
+    pub fn from(bytes: &Bytes) -> Result<Self, Error> {
+        let header = match Header::from_response(bytes) {
             Ok(result) => result,
             Err(_) => return Err(Error::Header),
         };
 
-        let body = match Body::from_response(buffer) {
+        let body = match Body::from_response(bytes) {
             Ok(result) => result,
             Err(_) => return Err(Error::Body),
         };

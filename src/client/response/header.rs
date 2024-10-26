@@ -8,8 +8,10 @@ pub use meta::Meta;
 pub use mime::Mime;
 pub use status::Status;
 
+use glib::Bytes;
+
 pub struct Header {
-    status: Option<Status>,
+    status: Status,
     meta: Option<Meta>,
     mime: Option<Mime>,
     // @TODO
@@ -18,35 +20,41 @@ pub struct Header {
 }
 
 impl Header {
-    /// Construct from response buffer
-    /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
-    pub fn from_response(response: &[u8] /* @TODO */) -> Result<Self, Error> {
-        let end = Self::end(response)?;
+    // Constructors
+    pub fn from_response(bytes: &Bytes) -> Result<Self, Error> {
+        // Get header slice of bytes
+        let end = Self::end(bytes)?;
 
-        let buffer = match response.get(..end) {
-            Some(result) => result,
+        let bytes = Bytes::from(match bytes.get(..end) {
+            Some(buffer) => buffer,
             None => return Err(Error::Buffer),
-        };
+        });
 
-        let meta = match Meta::from_header(buffer) {
-            Ok(result) => Some(result),
-            Err(_) => None,
-        };
+        // Status is required, parse to continue
+        let status = match Status::from_header(&bytes) {
+            Ok(status) => Ok(status),
+            Err(reason) => Err(match reason {
+                status::Error::Decode => Error::StatusDecode,
+                status::Error::Undefined => Error::StatusUndefined,
+            }),
+        }?;
 
-        let mime = mime::from_header(buffer); // optional
-                                              // let charset = charset::from_header(buffer); @TODO
-                                              // let language = language::from_header(buffer); @TODO
-
-        let status = match status::from_header(buffer) {
-            Ok(result) => Some(result),
-            Err(_) => None,
-        };
-
-        Ok(Self { status, meta, mime })
+        // Done
+        Ok(Self {
+            status,
+            meta: match Meta::from_header(&bytes) {
+                Ok(meta) => Some(meta),
+                Err(_) => None,
+            },
+            mime: match Mime::from_header(&bytes) {
+                Ok(mime) => Some(mime),
+                Err(_) => None,
+            },
+        })
     }
 
     // Getters
-    pub fn status(&self) -> &Option<Status> {
+    pub fn status(&self) -> &Status {
         &self.status
     }
 
@@ -59,8 +67,10 @@ impl Header {
     }
 
     // Tools
-    fn end(buffer: &[u8]) -> Result<usize, Error> {
-        for (offset, &byte) in buffer.iter().enumerate() {
+
+    /// Get last header byte (until \r)
+    fn end(bytes: &Bytes) -> Result<usize, Error> {
+        for (offset, &byte) in bytes.iter().enumerate() {
             if byte == b'\r' {
                 return Ok(offset);
             }

@@ -1,15 +1,18 @@
 pub mod error;
 pub use error::Error;
 
-use glib::GString;
+use glib::{Bytes, GString};
 
+/// Entire meta buffer, but [status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes).
+///
+/// Usefult to grab placeholder text on 10, 11, 31 codes processing
 pub struct Meta {
     buffer: Vec<u8>,
 }
 
 impl Meta {
-    pub fn from_header(buffer: &[u8] /* @TODO */) -> Result<Self, Error> {
-        let buffer = match buffer.get(2..) {
+    pub fn from_header(bytes: &Bytes) -> Result<Self, Error> {
+        let buffer = match bytes.get(3..) {
             Some(bytes) => bytes.to_vec(),
             None => return Err(Error::Undefined),
         };
@@ -22,5 +25,9 @@ impl Meta {
             Ok(result) => Ok(result),
             Err(_) => Err(Error::Undefined),
         }
+    }
+
+    pub fn buffer(&self) -> &[u8] {
+        &self.buffer
     }
 }

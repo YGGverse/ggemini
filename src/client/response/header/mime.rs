@@ -1,6 +1,10 @@
-use glib::{GString, Uri};
+pub mod error;
+pub use error::Error;
+
+use glib::{Bytes, GString, Uri};
 use std::path::Path;
 
+/// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
 pub enum Mime {
     TextGemini,
     TextPlain,
@@ -10,53 +14,58 @@ pub enum Mime {
     ImageWebp,
 } // @TODO
 
-pub fn from_header(buffer: &[u8] /* @TODO */) -> Option<Mime> {
-    from_string(&match GString::from_utf8(buffer.to_vec()) {
-        Ok(result) => result,
-        Err(_) => return None, // @TODO error handler?
-    })
-}
-
-pub fn from_path(path: &Path) -> Option<Mime> {
-    match path.extension().and_then(|extension| extension.to_str()) {
-        Some("gmi") | Some("gemini") => Some(Mime::TextGemini),
-        Some("txt") => Some(Mime::TextPlain),
-        Some("png") => Some(Mime::ImagePng),
-        Some("gif") => Some(Mime::ImageGif),
-        Some("jpeg") | Some("jpg") => Some(Mime::ImageJpeg),
-        Some("webp") => Some(Mime::ImageWebp),
-        _ => None,
-    }
-}
-
-pub fn from_string(value: &str) -> Option<Mime> {
-    if value.contains("text/gemini") {
-        return Some(Mime::TextGemini);
+impl Mime {
+    pub fn from_header(bytes: &Bytes) -> Result<Self, Error> {
+        match bytes.get(..) {
+            Some(bytes) => match GString::from_utf8(bytes.to_vec()) {
+                Ok(string) => Self::from_string(string.as_str()),
+                Err(_) => Err(Error::Decode),
+            },
+            None => Err(Error::Undefined),
+        }
     }
 
-    if value.contains("text/plain") {
-        return Some(Mime::TextPlain);
+    pub fn from_path(path: &Path) -> Result<Self, Error> {
+        match path.extension().and_then(|extension| extension.to_str()) {
+            Some("gmi" | "gemini") => Ok(Self::TextGemini),
+            Some("txt") => Ok(Self::TextPlain),
+            Some("png") => Ok(Self::ImagePng),
+            Some("gif") => Ok(Self::ImageGif),
+            Some("jpeg" | "jpg") => Ok(Self::ImageJpeg),
+            Some("webp") => Ok(Self::ImageWebp),
+            _ => Err(Error::Undefined),
+        }
     }
 
-    if value.contains("image/gif") {
-        return Some(Mime::ImageGif);
+    pub fn from_string(value: &str) -> Result<Self, Error> {
+        if value.contains("text/gemini") {
+            return Ok(Self::TextGemini);
+        }
+
+        if value.contains("text/plain") {
+            return Ok(Self::TextPlain);
+        }
+
+        if value.contains("image/gif") {
+            return Ok(Self::ImageGif);
+        }
+
+        if value.contains("image/jpeg") {
+            return Ok(Self::ImageJpeg);
+        }
+
+        if value.contains("image/webp") {
+            return Ok(Self::ImageWebp);
+        }
+
+        if value.contains("image/png") {
+            return Ok(Self::ImagePng);
+        }
+
+        Err(Error::Undefined)
     }
 
-    if value.contains("image/jpeg") {
-        return Some(Mime::ImageJpeg);
+    pub fn from_uri(uri: &Uri) -> Result<Self, Error> {
+        Self::from_path(Path::new(&uri.to_string()))
     }
-
-    if value.contains("image/webp") {
-        return Some(Mime::ImageWebp);
-    }
-
-    if value.contains("image/png") {
-        return Some(Mime::ImagePng);
-    }
-
-    None
-}
-
-pub fn from_uri(uri: &Uri) -> Option<Mime> {
-    from_path(Path::new(&uri.to_string()))
 }

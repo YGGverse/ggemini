@@ -1,4 +1,4 @@
 pub enum Error {
+    InputStream,
     Overflow,
-    StreamChunkRead,
 }

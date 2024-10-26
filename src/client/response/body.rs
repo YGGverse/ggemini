@@ -1,18 +1,18 @@
 pub mod error;
 pub use error::Error;
 
-use glib::GString;
+use glib::{Bytes, GString};
 
 pub struct Body {
     buffer: Vec<u8>,
 }
 
 impl Body {
-    /// Construct from response buffer
-    pub fn from_response(response: &[u8] /* @TODO */) -> Result<Self, Error> {
-        let start = Self::start(response)?;
+    // Constructors
+    pub fn from_response(bytes: &Bytes) -> Result<Self, Error> {
+        let start = Self::start(bytes)?;
 
-        let buffer = match response.get(start..) {
+        let buffer = match bytes.get(start..) {
             Some(result) => result,
             None => return Err(Error::Buffer),
         };
@@ -23,7 +23,7 @@ impl Body {
     }
 
     // Getters
-    pub fn buffer(&self) -> &Vec<u8> {
+    pub fn buffer(&self) -> &[u8] {
         &self.buffer
     }
 
