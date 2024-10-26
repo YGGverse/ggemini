@@ -1,6 +1,6 @@
 # ggemini
 
-Glib-oriented network library for [Gemini protocol](https://geminiprotocol.net/)
+Glib/Gio-oriented network library for [Gemini protocol](https://geminiprotocol.net/)
 
 > [!IMPORTANT]
 > Project in development!
