@@ -20,8 +20,8 @@ cargo add ggemini
 
 ### `client`
 
-[Gio](https://docs.gtk.org/gio/) API already includes powerful [SocketClient](https://docs.gtk.org/gio/class.SocketClient.html),
-so this Client just bit extends some features for Gemini Protocol.
+Gio API already includes powerful [SocketClient](https://docs.gtk.org/gio/class.SocketClient.html),
+this Client just extends a bit some features for Gemini Protocol.
 
 #### `client::buffer`
 
