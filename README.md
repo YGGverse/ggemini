@@ -7,7 +7,7 @@ Glib/Gio-oriented network library for [Gemini protocol](https://geminiprotocol.n
 >
 
 GGemini (or G-Gemini) initially created as the client extension for [Yoda Browser](https://github.com/YGGverse/Yoda),
-but also could be useful for any other integration as depends of
+also could be useful for any other integration as depends of
 [glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`v2_66`) crates only.
 
 ## Install
