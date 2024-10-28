@@ -23,9 +23,6 @@ cargo add ggemini
 This library just extend some minimal features wanted for Gemini Protocol
 
 #### `client::response`
-
-Response parser, currently includes low-level interaction API for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-
 #### `client::response::header`
 #### `client::response::body`
 
