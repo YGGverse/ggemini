@@ -36,16 +36,16 @@ impl Mime {
         match path.extension().and_then(|extension| extension.to_str()) {
             // Text
             Some("gmi" | "gemini") => Ok(Self::TextGemini),
-            // Image
             Some("txt") => Ok(Self::TextPlain),
-            Some("png") => Ok(Self::ImagePng),
+            // Image
             Some("gif") => Ok(Self::ImageGif),
             Some("jpeg" | "jpg") => Ok(Self::ImageJpeg),
+            Some("png") => Ok(Self::ImagePng),
             Some("webp") => Ok(Self::ImageWebp),
             // Audio
             Some("flac") => Ok(Self::AudioFlac),
             Some("mp3") => Ok(Self::AudioMpeg),
-            Some("ogg" | "opus" | "oga" | "spx") => Ok(Self::AudioOgg),
+            Some("oga" | "ogg" | "opus" | "spx") => Ok(Self::AudioOgg),
             _ => Err(Error::Undefined),
         } // @TODO extension to lowercase
     }
