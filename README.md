@@ -20,7 +20,7 @@ cargo add ggemini
 ### `client`
 
 [Gio](https://docs.gtk.org/gio/) API already provide powerful [SocketClient](https://docs.gtk.org/gio/class.SocketClient.html)\
-This library just extends some minimal features wanted for Gemini Protocol.
+`client` collection just extends some minimal features wanted for Gemini Protocol.
 
 #### `client::response`
 #### `client::response::header`
