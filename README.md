@@ -1,6 +1,6 @@
 # ggemini
 
-Glib-oriented client for [Gemini protocol](https://geminiprotocol.net/)
+Glib/Gio-oriented network API for [Gemini protocol](https://geminiprotocol.net/)
 
 > [!IMPORTANT]
 > Project in development!
