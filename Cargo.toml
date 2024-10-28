@@ -6,7 +6,7 @@ license = "MIT"
 readme = "README.md"
 description = "Glib-oriented client for Gemini protocol"
 keywords = ["gemini", "gemini-protocol", "gtk", "gio", "client"]
-categories = ["development-tools", "network-programming"]
+categories = ["development-tools", "network-programming", "parsing"]
 repository = "https://github.com/YGGverse/ggemini"
 
 [dependencies.gio]
