@@ -14,6 +14,8 @@ use gio::{
 };
 use glib::{Bytes, Priority};
 
+pub const HEADER_BYTES_LEN: usize = 0x400; // 1024
+
 pub struct Header {
     status: Status,
     meta: Option<Meta>,
@@ -34,7 +36,7 @@ impl Header {
     ) {
         // Take header buffer from input stream
         Self::read_from_socket_connection_async(
-            Vec::with_capacity(1024),
+            Vec::with_capacity(HEADER_BYTES_LEN),
             socket_connection,
             match cancellable {
                 Some(value) => Some(value),
@@ -105,7 +107,7 @@ impl Header {
             move |result| match result {
                 Ok(bytes) => {
                     // Expect valid header length
-                    if bytes.len() == 0 || buffer.len() + 1 > 1024 {
+                    if bytes.len() == 0 || buffer.len() >= HEADER_BYTES_LEN {
                         return callback(Err((Error::Protocol, None)));
                     }
 
