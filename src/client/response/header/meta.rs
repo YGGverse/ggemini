@@ -1,7 +1,7 @@
 pub mod error;
 pub use error::Error;
 
-use glib::{Bytes, GString};
+use glib::GString;
 
 /// Entire meta buffer, but [status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes).
 ///
@@ -11,13 +11,13 @@ pub struct Meta {
 }
 
 impl Meta {
-    pub fn from_header(bytes: &Bytes) -> Result<Self, Error> {
-        let buffer = match bytes.get(3..) {
-            Some(bytes) => bytes.to_vec(),
+    pub fn from_header(buffer: &[u8]) -> Result<Self, Error> {
+        match buffer.get(3..) {
+            Some(value) => Ok(Self {
+                buffer: value.to_vec(),
+            }),
             None => return Err(Error::Undefined),
-        };
-
-        Ok(Self { buffer })
+        }
     }
 
     pub fn to_gstring(&self) -> Result<GString, Error> {

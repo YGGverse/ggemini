@@ -1,14 +1,13 @@
 # ggemini
 
-Glib/Gio-oriented network library for [Gemini protocol](https://geminiprotocol.net/)
+Glib-oriented client for [Gemini protocol](https://geminiprotocol.net/)
 
 > [!IMPORTANT]
 > Project in development!
 >
 
-GGemini (or G-Gemini) initially created as the client extension for [Yoda Browser](https://github.com/YGGverse/Yoda),
-also could be useful for any other integration as depends of
-[glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`v2_66`) crates only.
+This library mostly written as the network extension for [Yoda](https://github.com/YGGverse/Yoda) - GTK Browser for Gemini Protocol,
+it also could be useful for any other integrations as depend of [glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`2.66+`) crates only.
 
 ## Install
 
@@ -20,22 +19,15 @@ cargo add ggemini
 
 ### `client`
 
-Gio API already includes powerful [SocketClient](https://docs.gtk.org/gio/class.SocketClient.html),
-`ggemini::client` just extends some features a bit, to simplify interaction with socket over Gemini Protocol.
-
-It also contain some children components/mods bellow for low-level access any feature directly.
-
-#### `client::buffer`
+[Gio](https://docs.gtk.org/gio/) API already provide powerful [SocketClient](https://docs.gtk.org/gio/class.SocketClient.html).
+This library just extend some minimal features wanted for Gemini Protocol
 
 #### `client::response`
 
-Response parser for [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
+Response parser, currently includes low-level interaction API for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
 
-#### `client::response::Response`
 #### `client::response::header`
 #### `client::response::body`
-
-https://docs.gtk.org/glib/struct.Bytes.html
 
 ## See also
 

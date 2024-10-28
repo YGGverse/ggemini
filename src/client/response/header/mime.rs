@@ -1,10 +1,11 @@
 pub mod error;
 pub use error::Error;
 
-use glib::{Bytes, GString, Uri};
+use glib::{GString, Uri};
 use std::path::Path;
 
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
+#[derive(Debug)]
 pub enum Mime {
     TextGemini,
     TextPlain,
@@ -15,9 +16,9 @@ pub enum Mime {
 } // @TODO
 
 impl Mime {
-    pub fn from_header(bytes: &Bytes) -> Result<Self, Error> {
-        match bytes.get(..) {
-            Some(bytes) => match GString::from_utf8(bytes.to_vec()) {
+    pub fn from_header(buffer: &[u8]) -> Result<Self, Error> {
+        match buffer.get(..) {
+            Some(value) => match GString::from_utf8(value.to_vec()) {
                 Ok(string) => Self::from_string(string.as_str()),
                 Err(_) => Err(Error::Decode),
             },

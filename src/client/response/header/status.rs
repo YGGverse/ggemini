@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-use glib::{Bytes, GString};
+use glib::GString;
 
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes
+#[derive(Debug)]
 pub enum Status {
     Input,
     SensitiveInput,
@@ -12,9 +13,9 @@ pub enum Status {
 } // @TODO
 
 impl Status {
-    pub fn from_header(bytes: &Bytes) -> Result<Self, Error> {
-        match bytes.get(0..2) {
-            Some(bytes) => match GString::from_utf8(bytes.to_vec()) {
+    pub fn from_header(buffer: &[u8]) -> Result<Self, Error> {
+        match buffer.get(0..2) {
+            Some(value) => match GString::from_utf8(value.to_vec()) {
                 Ok(string) => Self::from_string(string.as_str()),
                 Err(_) => Err(Error::Decode),
             },

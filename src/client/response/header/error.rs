@@ -1,6 +1,8 @@
+#[derive(Debug)]
 pub enum Error {
     Buffer,
-    Format,
+    InputStream,
+    Protocol,
     StatusDecode,
     StatusUndefined,
 }
