@@ -126,7 +126,7 @@ impl Body {
                     // Continue bytes read..
                     self.read_all_async(connection, cancelable, priority, chunk, callback);
                 }
-                Err(reason) => callback(Err((Error::InputStream, Some(reason.message())))),
+                Err(reason) => callback(Err((Error::InputStreamRead, Some(reason.message())))),
             },
         );
     }
@@ -140,7 +140,7 @@ impl Body {
 
         // Validate overflow
         if total > self.max_size {
-            return Err(Error::Overflow);
+            return Err(Error::BufferOverflow);
         }
 
         // Success
