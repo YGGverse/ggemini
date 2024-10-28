@@ -7,12 +7,18 @@ use std::path::Path;
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
 #[derive(Debug)]
 pub enum Mime {
+    // Text
     TextGemini,
     TextPlain,
-    ImagePng,
+    // Image
     ImageGif,
     ImageJpeg,
+    ImagePng,
     ImageWebp,
+    // Audio
+    AudioFlac,
+    AudioMpeg,
+    AudioOgg,
 } // @TODO
 
 impl Mime {
@@ -28,17 +34,24 @@ impl Mime {
 
     pub fn from_path(path: &Path) -> Result<Self, Error> {
         match path.extension().and_then(|extension| extension.to_str()) {
+            // Text
             Some("gmi" | "gemini") => Ok(Self::TextGemini),
+            // Image
             Some("txt") => Ok(Self::TextPlain),
             Some("png") => Ok(Self::ImagePng),
             Some("gif") => Ok(Self::ImageGif),
             Some("jpeg" | "jpg") => Ok(Self::ImageJpeg),
             Some("webp") => Ok(Self::ImageWebp),
+            // Audio
+            Some("flac") => Ok(Self::AudioFlac),
+            Some("mp3") => Ok(Self::AudioMpeg),
+            Some("ogg" | "opus" | "oga" | "spx") => Ok(Self::AudioOgg),
             _ => Err(Error::Undefined),
-        }
+        } // @TODO extension to lowercase
     }
 
     pub fn from_string(value: &str) -> Result<Self, Error> {
+        // Text
         if value.contains("text/gemini") {
             return Ok(Self::TextGemini);
         }
@@ -47,6 +60,7 @@ impl Mime {
             return Ok(Self::TextPlain);
         }
 
+        // Image
         if value.contains("image/gif") {
             return Ok(Self::ImageGif);
         }
@@ -61,6 +75,19 @@ impl Mime {
 
         if value.contains("image/png") {
             return Ok(Self::ImagePng);
+        }
+
+        // Audio
+        if value.contains("audio/flac") {
+            return Ok(Self::AudioFlac);
+        }
+
+        if value.contains("audio/mpeg") {
+            return Ok(Self::AudioMpeg);
+        }
+
+        if value.contains("audio/ogg") {
+            return Ok(Self::AudioOgg);
         }
 
         Err(Error::Undefined)
