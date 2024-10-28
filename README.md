@@ -6,7 +6,7 @@ Glib/Gio-oriented network API for [Gemini protocol](https://geminiprotocol.net/)
 > Project in development!
 >
 
-This library written as the network extension for [Yoda](https://github.com/YGGverse/Yoda) - GTK Browser for Gemini Protocol,
+GGemini (or G-Gemini) library written as the network extension for [Yoda](https://github.com/YGGverse/Yoda) - GTK Browser for Gemini Protocol,
 it also could be useful for any other integrations as depend of [glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`2.66+`) crates only
 
 ## Install
