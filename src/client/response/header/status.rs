@@ -6,10 +6,14 @@ use glib::GString;
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes
 #[derive(Debug)]
 pub enum Status {
+    // 10 | 11
     Input,
     SensitiveInput,
+    // 20
     Success,
+    // 30 | 31
     Redirect,
+    PermanentRedirect,
 } // @TODO
 
 impl Status {
@@ -28,6 +32,8 @@ impl Status {
             "10" => Ok(Self::Input),
             "11" => Ok(Self::SensitiveInput),
             "20" => Ok(Self::Success),
+            "30" => Ok(Self::Redirect),
+            "31" => Ok(Self::PermanentRedirect),
             _ => Err(Error::Undefined),
         }
     }
