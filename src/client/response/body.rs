@@ -55,7 +55,7 @@ impl Body {
     /// Simple way to create `Self` buffer from active [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     ///
     /// **Options**
-    /// * `connection` - [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html) to read bytes from
+    /// * `socket_connection` - [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html) to read bytes from
     /// * `callback` function to apply on async operations complete, return `Result<Self, (Error, Option<&str>)>`
     ///
     /// **Notes**
@@ -64,10 +64,17 @@ impl Body {
     /// not just [InputStream](https://docs.gtk.org/gio/class.InputStream.html) because of async features;
     /// * use this method after `Header` bytes taken from input stream connected (otherwise, take a look on high-level `Response` parser)
     pub fn from_socket_connection_async(
-        connection: SocketConnection,
+        socket_connection: SocketConnection,
         callback: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
     ) {
-        Self::read_all_async(Self::new(), connection, None, None, None, callback);
+        Self::read_all_from_socket_connection_async(
+            Self::new(),
+            socket_connection,
+            None,
+            None,
+            None,
+            callback,
+        );
     }
 
     // Actions
@@ -84,20 +91,20 @@ impl Body {
     /// instead of [InputStream](https://docs.gtk.org/gio/class.InputStream.html) just to keep main connection alive in the async chunks context
     ///
     /// **Options**
-    /// * `connection` - [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html) to read bytes from
+    /// * `socket_connection` - [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html) to read bytes from
     /// * `cancellable` - [Cancellable](https://docs.gtk.org/gio/class.Cancellable.html) or `None::<&Cancellable>` by default
     /// * `priority` - [Priority::DEFAULT](https://docs.gtk.org/glib/const.PRIORITY_DEFAULT.html) by default
     /// * `chunk` optional bytes count to read per chunk (`0x100` by default)
     /// * `callback` function to apply on all async operations complete, return `Result<Self, (Error, Option<&str>)>`
-    pub fn read_all_async(
+    pub fn read_all_from_socket_connection_async(
         mut self,
-        connection: SocketConnection,
+        socket_connection: SocketConnection,
         cancelable: Option<Cancellable>,
         priority: Option<Priority>,
         chunk: Option<usize>,
         callback: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
     ) {
-        connection.input_stream().read_bytes_async(
+        socket_connection.input_stream().read_bytes_async(
             match chunk {
                 Some(value) => value,
                 None => 0x100,
@@ -124,7 +131,13 @@ impl Body {
                     };
 
                     // Continue bytes read..
-                    self.read_all_async(connection, cancelable, priority, chunk, callback);
+                    self.read_all_from_socket_connection_async(
+                        socket_connection,
+                        cancelable,
+                        priority,
+                        chunk,
+                        callback,
+                    );
                 }
                 Err(reason) => callback(Err((Error::InputStreamRead, Some(reason.message())))),
             },
