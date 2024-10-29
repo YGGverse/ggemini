@@ -34,7 +34,7 @@ pub fn from_socket_connection_async(
     priority: Priority,
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
-    on_chunk: impl Fn((&Bytes, &usize)) + 'static,
+    on_chunk: impl Fn((Bytes, usize)) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
 ) {
     read_all_from_socket_connection_async(
@@ -81,7 +81,7 @@ pub fn read_all_from_socket_connection_async(
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
     bytes_total: usize,
-    on_chunk: impl Fn((&Bytes, &usize)) + 'static,
+    on_chunk: impl Fn((Bytes, usize)) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
 ) {
     socket_connection.input_stream().read_bytes_async(
@@ -94,7 +94,7 @@ pub fn read_all_from_socket_connection_async(
                 let bytes_total = bytes_total + bytes.len();
 
                 // Callback chunk function
-                on_chunk((&bytes, &bytes_total));
+                on_chunk((bytes.clone(), bytes_total));
 
                 // Validate max size
                 if bytes_total > bytes_total_limit {
