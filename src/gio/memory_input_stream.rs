@@ -34,7 +34,7 @@ pub fn from_socket_connection_async(
     priority: Priority,
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
-    on_chunk: Option<impl Fn((&Bytes, usize)) + 'static>,
+    on_chunk: Option<impl Fn((&Bytes, &usize)) + 'static>,
     on_complete: Option<impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static>,
 ) {
     read_all_from_socket_connection_async(
@@ -82,7 +82,7 @@ pub fn read_all_from_socket_connection_async(
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
     bytes_total: usize,
-    on_chunk: Option<impl Fn((&Bytes, usize)) + 'static>,
+    on_chunk: Option<impl Fn((&Bytes, &usize)) + 'static>,
     on_complete: Option<impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static>,
 ) {
     socket_connection.input_stream().read_bytes_async(
@@ -96,7 +96,7 @@ pub fn read_all_from_socket_connection_async(
 
                 // Callback chunk function
                 if let Some(ref callback) = on_chunk {
-                    callback((&bytes, bytes_total));
+                    callback((&bytes, &bytes_total));
                 }
 
                 // Validate max size
