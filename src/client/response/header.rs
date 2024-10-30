@@ -53,13 +53,13 @@ impl Header {
                         match Status::from_header(&buffer) {
                             Ok(status) => Ok(Self {
                                 status,
-                                meta: match Meta::from_header(&buffer) {
+                                meta: match Meta::from(&buffer) {
                                     Ok(meta) => Some(meta),
-                                    Err(_) => None,
+                                    Err(_) => None, // @TODO handle
                                 },
                                 mime: match Mime::from_header(&buffer) {
                                     Ok(mime) => Some(mime),
-                                    Err(_) => None,
+                                    Err(_) => None, // @TODO handle
                                 },
                             }),
                             Err(reason) => Err((
