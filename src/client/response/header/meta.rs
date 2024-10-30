@@ -18,7 +18,7 @@ impl Meta {
     /// Parse Meta from UTF-8
     pub fn from(buffer: &[u8]) -> Result<Self, Error> {
         // Init bytes buffer
-        let mut bytes: Vec<u8> = Vec::new();
+        let mut bytes: Vec<u8> = Vec::with_capacity(1021);
 
         // Skip 3 bytes for status code of 1024 expected
         match buffer.get(3..1021) {
