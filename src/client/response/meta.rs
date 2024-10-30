@@ -130,7 +130,7 @@ impl Meta {
 
 // Tools
 
-/// Asynchronously take meta bytes from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
+/// Asynchronously read all meta bytes from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
 /// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
 ///
 /// Return UTF-8 buffer collected.
@@ -155,7 +155,7 @@ pub fn read_from_socket_connection_async(
                     return on_complete(Err((Error::Protocol, None)));
                 }
 
-                // Read next byte without buffer record
+                // Read next byte without record
                 if bytes.contains(&b'\r') {
                     return read_from_socket_connection_async(
                         buffer,
@@ -166,7 +166,7 @@ pub fn read_from_socket_connection_async(
                     );
                 }
 
-                // Complete without buffer record
+                // Complete without record
                 if bytes.contains(&b'\n') {
                     return on_complete(Ok(buffer));
                 }
