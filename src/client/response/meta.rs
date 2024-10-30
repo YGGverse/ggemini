@@ -9,10 +9,10 @@ pub use mime::Mime;
 pub use status::Status;
 
 use gio::{
-    prelude::{IOStreamExt, InputStreamExt},
+    prelude::{IOStreamExt, InputStreamExtManual},
     Cancellable, SocketConnection,
 };
-use glib::{Bytes, Priority};
+use glib::Priority;
 
 pub const MAX_LEN: usize = 0x400; // 1024
 
@@ -133,23 +133,25 @@ impl Meta {
 /// Asynchronously take meta bytes from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
 /// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
 ///
+/// Return UTF-8 buffer collected.
+///
 /// * this function implements low-level helper for `Meta::from_socket_connection_async`, also provides public API for external integrations
 /// * requires entire `SocketConnection` instead of `InputStream` to keep connection alive in async context
 pub fn read_from_socket_connection_async(
-    mut buffer: Vec<Bytes>,
+    mut buffer: Vec<u8>,
     connection: SocketConnection,
     cancellable: Option<Cancellable>,
     priority: Priority,
     on_complete: impl FnOnce(Result<Vec<u8>, (Error, Option<&str>)>) + 'static,
 ) {
-    connection.input_stream().read_bytes_async(
-        1, // do not change!
+    connection.input_stream().read_async(
+        vec![0],
         priority,
         cancellable.clone().as_ref(),
         move |result| match result {
-            Ok(bytes) => {
+            Ok((mut bytes, size)) => {
                 // Expect valid header length
-                if bytes.len() == 0 || buffer.len() >= MAX_LEN {
+                if size == 0 || buffer.len() >= MAX_LEN {
                     return on_complete(Err((Error::Protocol, None)));
                 }
 
@@ -166,15 +168,11 @@ pub fn read_from_socket_connection_async(
 
                 // Complete without buffer record
                 if bytes.contains(&b'\n') {
-                    return on_complete(Ok(buffer
-                        .iter()
-                        .flat_map(|byte| byte.iter())
-                        .cloned()
-                        .collect())); // convert to UTF-8
+                    return on_complete(Ok(buffer));
                 }
 
                 // Record
-                buffer.push(bytes);
+                buffer.append(&mut bytes);
 
                 // Continue
                 read_from_socket_connection_async(
@@ -185,7 +183,7 @@ pub fn read_from_socket_connection_async(
                     on_complete,
                 );
             }
-            Err(reason) => on_complete(Err((Error::InputStream, Some(reason.message())))),
+            Err((_, reason)) => on_complete(Err((Error::InputStream, Some(reason.message())))),
         },
     );
 }
