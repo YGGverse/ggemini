@@ -66,6 +66,7 @@ impl Header {
                                 match reason {
                                     status::Error::Decode => Error::StatusDecode,
                                     status::Error::Undefined => Error::StatusUndefined,
+                                    status::Error::Protocol => Error::StatusProtocol,
                                 },
                                 None,
                             )),

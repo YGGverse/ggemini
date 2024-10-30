@@ -4,5 +4,6 @@ pub enum Error {
     InputStream,
     Protocol,
     StatusDecode,
+    StatusProtocol,
     StatusUndefined,
 }
