@@ -3,7 +3,7 @@ pub use error::Error;
 
 use glib::GString;
 
-/// Response meta holder, but [status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes).
+/// Response meta holder
 ///
 /// Use as:
 /// * placeholder for 10, 11 status
