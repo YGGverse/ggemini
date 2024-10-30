@@ -4,6 +4,8 @@ pub use error::Error;
 use glib::{GString, Uri};
 use std::path::Path;
 
+pub const MAX_LEN: usize = 0x400; // 1024
+
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
 #[derive(Debug)]
 pub enum Mime {
@@ -22,9 +24,10 @@ pub enum Mime {
 } // @TODO
 
 impl Mime {
-    pub fn from_header(buffer: &[u8]) -> Result<Self, Error> {
-        match buffer.get(..) {
-            Some(value) => match GString::from_utf8(value.to_vec()) {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
+        let len = buffer.len();
+        match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
+            Some(value) => match GString::from_utf8(value.into()) {
                 Ok(string) => Self::from_string(string.as_str()),
                 Err(_) => Err(Error::Decode),
             },

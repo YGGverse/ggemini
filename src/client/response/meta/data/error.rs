@@ -2,5 +2,4 @@
 pub enum Error {
     Decode,
     Protocol,
-    Undefined,
 }

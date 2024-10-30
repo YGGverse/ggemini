@@ -1,7 +1,11 @@
 #[derive(Debug)]
 pub enum Error {
-    Buffer,
+    DataDecode,
+    DataProtocol,
     InputStream,
+    MimeDecode,
+    MimeProtocol,
+    MimeUndefined,
     Protocol,
     StatusDecode,
     StatusProtocol,

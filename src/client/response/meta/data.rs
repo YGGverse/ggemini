@@ -3,25 +3,30 @@ pub use error::Error;
 
 use glib::GString;
 
-/// Response meta holder
+pub const MAX_LEN: usize = 0x400; // 1024
+
+/// Meta data holder for response
 ///
 /// Could be created from entire response buffer or just header slice
 ///
 /// Use as:
 /// * placeholder for 10, 11 status
 /// * URL for 30, 31 status
-pub struct Meta {
+pub struct Data {
     value: Option<GString>,
 }
 
-impl Meta {
+impl Data {
     /// Parse Meta from UTF-8
-    pub fn from(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         // Init bytes buffer
-        let mut bytes: Vec<u8> = Vec::with_capacity(1021);
+        let mut bytes: Vec<u8> = Vec::with_capacity(MAX_LEN);
 
-        // Skip 3 bytes for status code of 1024 expected
-        match buffer.get(3..1021) {
+        // Calculate len once
+        let len = buffer.len();
+
+        // Skip 3 bytes for status code of `MAX_LEN` expected
+        match buffer.get(3..if len > MAX_LEN { MAX_LEN - 3 } else { len }) {
             Some(slice) => {
                 for &byte in slice {
                     // End of header
@@ -37,8 +42,8 @@ impl Meta {
                 match GString::from_utf8(bytes) {
                     Ok(value) => Ok(Self {
                         value: match value.is_empty() {
-                            true => None,
                             false => Some(value),
+                            true => None,
                         },
                     }),
                     Err(_) => Err(Error::Decode),
