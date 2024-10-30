@@ -5,6 +5,8 @@ use glib::GString;
 
 /// Response meta holder
 ///
+/// Could be created from entire response buffer or just header slice
+///
 /// Use as:
 /// * placeholder for 10, 11 status
 /// * URL for 30, 31 status
@@ -18,22 +20,16 @@ impl Meta {
         // Init bytes buffer
         let mut bytes: Vec<u8> = Vec::new();
 
-        // Skip status code
-        match buffer.get(3..) {
+        // Skip 3 bytes for status code of 1024 expected
+        match buffer.get(3..1021) {
             Some(slice) => {
-                for (count, &byte) in slice.iter().enumerate() {
-                    // Validate length
-                    if count > 0x400 {
-                        // 1024
-                        return Err(Error::Protocol);
-                    }
-
-                    // End of line, done
+                for &byte in slice {
+                    // End of header
                     if byte == b'\r' {
                         break;
                     }
 
-                    // Append
+                    // Continue
                     bytes.push(byte);
                 }
 
