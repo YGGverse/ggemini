@@ -16,14 +16,14 @@ impl Meta {
             Some(value) => Ok(Self {
                 buffer: value.to_vec(),
             }),
-            None => return Err(Error::Undefined),
+            None => return Err(Error::Protocol),
         }
     }
 
     pub fn to_gstring(&self) -> Result<GString, Error> {
         match GString::from_utf8(self.buffer.clone()) {
             Ok(result) => Ok(result),
-            Err(_) => Err(Error::Undefined),
+            Err(_) => Err(Error::Decode),
         }
     }
 

@@ -23,7 +23,7 @@ impl Status {
                 Ok(string) => Self::from_string(string.as_str()),
                 Err(_) => Err(Error::Decode),
             },
-            None => Err(Error::Undefined),
+            None => Err(Error::Protocol),
         }
     }
 
