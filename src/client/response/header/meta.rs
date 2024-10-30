@@ -5,7 +5,9 @@ use glib::GString;
 
 /// Entire meta buffer, but [status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes).
 ///
-/// Useful to grab placeholder text on 10, 11, 31 codes processing
+/// Use as:
+/// * placeholder value for 10, 11
+/// * URL for 30, 31
 pub struct Meta {
     buffer: Vec<u8>,
 }
@@ -16,7 +18,7 @@ impl Meta {
             Some(value) => Ok(Self {
                 buffer: value.to_vec(),
             }),
-            None => return Err(Error::Protocol),
+            None => return Err(Error::Protocol), // @TODO optional
         }
     }
 
