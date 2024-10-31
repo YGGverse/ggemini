@@ -1,3 +1,5 @@
+//! Read and parse Gemini response as GObject
+
 pub mod body;
 pub mod meta;
 
