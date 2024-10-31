@@ -22,15 +22,22 @@ pub struct Text {
 impl Text {
     // Constructors
 
-    /// Create new `Self` with options
-    pub fn new(data: GString) -> Self {
-        Self { data }
+    /// Create new `Self`
+    pub fn new() -> Self {
+        Self {
+            data: GString::new(),
+        }
+    }
+
+    /// Create new `Self` from string
+    pub fn from_string(data: &str) -> Self {
+        Self { data: data.into() }
     }
 
     /// Create new `Self` from UTF-8 buffer
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, (Error, Option<&str>)> {
         match GString::from_utf8(buffer.into()) {
-            Ok(data) => Ok(Self::new(data)),
+            Ok(data) => Ok(Self::from_string(&data)),
             Err(_) => Err((Error::Decode, None)),
         }
     }
