@@ -32,6 +32,7 @@ impl Meta {
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, (Error, Option<&str>)> {
         let len = buffer.len();
 
+        // Can parse from entire response or just meta buffer given
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(slice) => {
                 // Parse data
