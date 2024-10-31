@@ -137,7 +137,7 @@ impl Meta {
 /// Return UTF-8 buffer collected.
 ///
 /// * this function implements low-level helper for `Meta::from_socket_connection_async`, also provides public API for external integrations
-/// * requires entire `SocketConnection` instead of `InputStream` to keep connection alive in async context
+/// * requires `SocketConnection` instead of `InputStream` to keep connection alive (by increasing reference count in async context) @TODO
 pub fn read_from_socket_connection_async(
     mut buffer: Vec<u8>,
     connection: SocketConnection,
