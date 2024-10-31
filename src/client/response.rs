@@ -1,8 +1,6 @@
-//! Read and parse Gemini response as GObject
+//! Read and parse Gemini response as Object
 
-pub mod body;
 pub mod data;
 pub mod meta;
 
-pub use body::Body;
 pub use meta::Meta;
