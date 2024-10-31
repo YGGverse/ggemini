@@ -1,3 +1,8 @@
+//! Components for reading and parsing meta bytes from response:
+//! * [Gemini status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
+//! * meta data (for interactive statuses like 10, 11, 30 etc)
+//! * MIME type
+
 pub mod data;
 pub mod error;
 pub mod mime;
