@@ -34,10 +34,12 @@ impl Meta {
     // Constructors
 
     /// Create new `Self` from UTF-8 buffer
+    /// * supports entire response or just meta slice
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, (Error, Option<&str>)> {
+        // Calculate buffer length once
         let len = buffer.len();
 
-        // Can parse from entire response or just meta buffer given
+        // Parse meta bytes only
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(slice) => {
                 // Parse data
