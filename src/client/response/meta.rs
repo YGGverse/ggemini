@@ -23,7 +23,7 @@ pub const MAX_LEN: usize = 0x400; // 1024
 
 pub struct Meta {
     data: Data,
-    mime: Mime,
+    mime: Option<Mime>,
     status: Status,
     // @TODO
     // charset: Charset,
@@ -129,7 +129,7 @@ impl Meta {
         &self.data
     }
 
-    pub fn mime(&self) -> &Mime {
+    pub fn mime(&self) -> &Option<Mime> {
         &self.mime
     }
 }
