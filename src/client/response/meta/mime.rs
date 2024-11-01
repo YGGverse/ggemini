@@ -1,10 +1,15 @@
+//! MIME type parser for different data types:
+//!
+//! * UTF-8 buffer with entire response or just with meta slice (that include **header**)
+//! * String (that include **header**)
+//! * [Uri](https://docs.gtk.org/glib/struct.Uri.html) (that include **extension**)
+//! * `std::Path` (that include **extension**)
+
 pub mod error;
 pub use error::Error;
 
 use glib::{GString, Uri};
 use std::path::Path;
-
-pub const MAX_LEN: usize = 0x400; // 1024
 
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
 #[derive(Debug)]
@@ -24,8 +29,18 @@ pub enum Mime {
 } // @TODO
 
 impl Mime {
+    /// Create new `Self` from UTF-8 buffer
+    ///
+    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes) that does not expect MIME type in header
+    /// * includes `Self::from_string` parser, it means that given buffer should contain some **header** (not filepath or any other type of strings)
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
+        // Define max buffer length for this parser
+        const MAX_LEN: usize = 0x400; // 1024
+
+        // Calculate buffer length once
         let len = buffer.len();
+
+        // Parse meta bytes only
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(value) => match GString::from_utf8(value.into()) {
                 Ok(string) => Self::from_string(string.as_str()),
@@ -35,6 +50,7 @@ impl Mime {
         }
     }
 
+    /// Create new `Self` from `std::Path`
     pub fn from_path(path: &Path) -> Result<Self, Error> {
         match path.extension().and_then(|extension| extension.to_str()) {
             // Text
@@ -53,6 +69,10 @@ impl Mime {
         } // @TODO extension to lowercase
     }
 
+    /// Create new `Self` from string that includes **header**
+    ///
+    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
+    /// that does not expect MIME type
     pub fn from_string(value: &str) -> Result<Option<Self>, Error> {
         // Text
         if value.contains("text/gemini") {
@@ -102,6 +122,7 @@ impl Mime {
         Ok(None) // may be empty (for some status codes)
     }
 
+    /// Create new `Self` from [Uri](https://docs.gtk.org/glib/struct.Uri.html)
     pub fn from_uri(uri: &Uri) -> Result<Self, Error> {
         Self::from_path(Path::new(&uri.to_string()))
     }
