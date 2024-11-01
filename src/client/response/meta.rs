@@ -22,9 +22,9 @@ use glib::Priority;
 pub const MAX_LEN: usize = 0x400; // 1024
 
 pub struct Meta {
-    data: Data,
-    mime: Option<Mime>,
     status: Status,
+    data: Option<Data>,
+    mime: Option<Mime>,
     // @TODO
     // charset: Charset,
     // language: Language,
@@ -127,7 +127,7 @@ impl Meta {
         &self.status
     }
 
-    pub fn data(&self) -> &Data {
+    pub fn data(&self) -> &Option<Data> {
         &self.data
     }
 

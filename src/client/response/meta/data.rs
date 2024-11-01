@@ -13,12 +13,15 @@ pub const MAX_LEN: usize = 0x400; // 1024
 /// * placeholder for 10, 11 status
 /// * URL for 30, 31 status
 pub struct Data {
-    value: Option<GString>,
+    value: GString,
 }
 
 impl Data {
-    /// Parse Meta from UTF-8
-    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
+    /// Parse meta data from UTF-8 buffer
+    ///
+    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
+    /// that does not expect any data in header
+    pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
         // Init bytes buffer
         let mut bytes: Vec<u8> = Vec::with_capacity(MAX_LEN);
 
@@ -40,11 +43,9 @@ impl Data {
 
                 // Assumes the bytes are valid UTF-8
                 match GString::from_utf8(bytes) {
-                    Ok(value) => Ok(Self {
-                        value: match value.is_empty() {
-                            false => Some(value),
-                            true => None,
-                        },
+                    Ok(value) => Ok(match value.is_empty() {
+                        false => Some(Self { value }),
+                        true => None,
                     }),
                     Err(_) => Err(Error::Decode),
                 }
@@ -53,7 +54,7 @@ impl Data {
         }
     }
 
-    pub fn value(&self) -> &Option<GString> {
+    pub fn value(&self) -> &GString {
         &self.value
     }
 }
