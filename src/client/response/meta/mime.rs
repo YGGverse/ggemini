@@ -21,6 +21,7 @@ pub enum Mime {
     ImageGif,
     ImageJpeg,
     ImagePng,
+    ImageSvg,
     ImageWebp,
     // Audio
     AudioFlac,
@@ -56,11 +57,14 @@ impl Mime {
             // Text
             Some("gmi" | "gemini") => Ok(Self::TextGemini),
             Some("txt") => Ok(Self::TextPlain),
+
             // Image
             Some("gif") => Ok(Self::ImageGif),
             Some("jpeg" | "jpg") => Ok(Self::ImageJpeg),
             Some("png") => Ok(Self::ImagePng),
+            Some("svg") => Ok(Self::ImageSvg),
             Some("webp") => Ok(Self::ImageWebp),
+
             // Audio
             Some("flac") => Ok(Self::AudioFlac),
             Some("mp3") => Ok(Self::AudioMpeg),
@@ -92,12 +96,16 @@ impl Mime {
             return Ok(Some(Self::ImageJpeg));
         }
 
-        if value.contains("image/webp") {
-            return Ok(Some(Self::ImageWebp));
-        }
-
         if value.contains("image/png") {
             return Ok(Some(Self::ImagePng));
+        }
+
+        if value.contains("image/svg+xml") {
+            return Ok(Some(Self::ImageSvg));
+        }
+
+        if value.contains("image/webp") {
+            return Ok(Some(Self::ImageWebp));
         }
 
         // Audio
