@@ -1,3 +1,6 @@
+//! Components for reading and parsing meta **data** bytes from response
+//! (e.g. placeholder text for 10, 11, url string for 30, 31 etc)
+
 pub mod error;
 pub use error::Error;
 
@@ -5,19 +8,18 @@ use glib::GString;
 
 pub const MAX_LEN: usize = 0x400; // 1024
 
-/// Meta data holder for response
+/// Meta **data** holder
 ///
-/// Could be created from entire response buffer or just header slice
-///
-/// Use as:
-/// * placeholder for 10, 11 status
-/// * URL for 30, 31 status
+/// For example, `value` could contain:
+/// * placeholder text for 10, 11 status
+/// * URL string for 30, 31 status
 pub struct Data {
     value: GString,
 }
 
 impl Data {
-    /// Parse meta data from UTF-8 buffer
+    /// Parse meta **data** from UTF-8 buffer
+    /// from entire response or just header slice
     ///
     /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
     /// that does not expect any data in header
