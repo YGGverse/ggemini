@@ -6,8 +6,9 @@ Glib/Gio-oriented network API for [Gemini protocol](https://geminiprotocol.net/)
 > Project in development!
 >
 
-GGemini (or G-Gemini) library written as the client extension for [Yoda](https://github.com/YGGverse/Yoda).
-Useful for GTK-based applications, require [glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`2.66+`) only
+GGemini (or G-Gemini) library written as the client extension for [Yoda](https://github.com/YGGverse/Yoda)
+
+This library could be useful for other GTK-based applications, require [glib](https://crates.io/crates/glib) and [gio](https://crates.io/crates/gio) (`2.66+`) only
 
 ## Install
 
