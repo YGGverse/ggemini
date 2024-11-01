@@ -50,7 +50,7 @@ impl Mime {
         }
     }
 
-    /// Create new `Self` from `std::Path`
+    /// Create new `Self` from `std::Path` that includes file **extension**
     pub fn from_path(path: &Path) -> Result<Self, Error> {
         match path.extension().and_then(|extension| extension.to_str()) {
             // Text
@@ -123,6 +123,7 @@ impl Mime {
     }
 
     /// Create new `Self` from [Uri](https://docs.gtk.org/glib/struct.Uri.html)
+    /// that includes file **extension**
     pub fn from_uri(uri: &Uri) -> Result<Self, Error> {
         Self::from_path(Path::new(&uri.to_string()))
     }
