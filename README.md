@@ -19,11 +19,6 @@ cargo add ggemini
 
 * [Documentation](https://docs.rs/ggemini/latest/ggemini/)
 
-_todo_
-
-### `client`
-### `gio`
-
 ## See also
 
 * [ggemtext](https://github.com/YGGverse/ggemtext) - Glib-oriented Gemtext API
