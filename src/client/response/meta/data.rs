@@ -6,8 +6,6 @@ pub use error::Error;
 
 use glib::GString;
 
-pub const MAX_LEN: usize = 0x400; // 1024
-
 /// Meta **data** holder
 ///
 /// For example, `value` could contain:
@@ -18,12 +16,17 @@ pub struct Data {
 }
 
 impl Data {
+    // Constructors
+
     /// Parse meta **data** from UTF-8 buffer
     /// from entire response or just header slice
     ///
     /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
     /// that does not expect any data in header
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
+        // Define max buffer length for this method
+        const MAX_LEN: usize = 0x400; // 1024
+
         // Init bytes buffer
         let mut bytes: Vec<u8> = Vec::with_capacity(MAX_LEN);
 
@@ -55,6 +58,8 @@ impl Data {
             None => Err(Error::Protocol),
         }
     }
+
+    // Getters
 
     pub fn value(&self) -> &GString {
         &self.value
