@@ -26,8 +26,8 @@ pub struct Meta {
     data: Option<Data>,
     mime: Option<Mime>,
     // @TODO
-    // charset: Charset,
-    // language: Language,
+    // charset: Option<Charset>,
+    // language: Option<Language>,
 }
 
 impl Meta {
