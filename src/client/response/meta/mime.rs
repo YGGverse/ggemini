@@ -122,9 +122,10 @@ impl Mime {
         }
 
         // Some type exist, but not defined yet
+        /* @TODO unstable
         if value.contains("/") {
             return Err(Error::Undefined);
-        }
+        } */
 
         // Done
         Ok(None) // may be empty (for some status codes)
