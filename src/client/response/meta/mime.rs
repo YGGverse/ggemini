@@ -1,6 +1,6 @@
 //! MIME type parser for different data types:
 //!
-//! * UTF-8 buffer with entire response or just with meta slice (that include **header**)
+//! * UTF-8 buffer with entire response or just with meta slice (that include entire **header**)
 //! * String (that include **header**)
 //! * [Uri](https://docs.gtk.org/glib/struct.Uri.html) (that include **extension**)
 //! * `std::Path` (that include **extension**)
@@ -30,10 +30,12 @@ pub enum Mime {
 } // @TODO
 
 impl Mime {
-    /// Create new `Self` from UTF-8 buffer
+    /// Create new `Self` from UTF-8 buffer (that includes **header**)
     ///
-    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes) that does not expect MIME type in header
-    /// * includes `Self::from_string` parser, it means that given buffer should contain some **header** (not filepath or any other type of strings)
+    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
+    /// that does not expect MIME type in header
+    /// * includes `Self::from_string` parser,
+    /// it means that given buffer should contain some **header** (not filepath or any other type of strings)
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
         // Define max buffer length for this method
         const MAX_LEN: usize = 0x400; // 1024
@@ -75,8 +77,10 @@ impl Mime {
 
     /// Create new `Self` from string that includes **header**
     ///
-    /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
-    /// that does not expect MIME type
+    /// **Return**
+    ///
+    /// * `None` if MIME type not found
+    /// * `Error::Undefined` if status code 2* and type not found in `Mime` enum
     pub fn from_string(value: &str) -> Result<Option<Self>, Error> {
         // Text
         if value.contains("text/gemini") {
@@ -121,14 +125,13 @@ impl Mime {
             return Ok(Some(Self::AudioOgg));
         }
 
-        // Some type exist, but not defined yet
-        /* @TODO unstable
-        if value.contains("/") {
+        // Some type exist, but not defined yet (on status code is 2*)
+        if value.starts_with("2") && value.contains("/") {
             return Err(Error::Undefined);
-        } */
+        }
 
         // Done
-        Ok(None) // may be empty (for some status codes)
+        Ok(None) // may be empty (status code ^2*)
     }
 
     /// Create new `Self` from [Uri](https://docs.gtk.org/glib/struct.Uri.html)
