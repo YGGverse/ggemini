@@ -19,6 +19,12 @@ pub struct Text {
     data: GString,
 }
 
+impl Default for Text {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Text {
     // Constructors
 
