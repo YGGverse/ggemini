@@ -6,9 +6,9 @@ pub use error::Error;
 // Local dependencies
 use gio::{
     prelude::{IOStreamExt, InputStreamExt},
-    Cancellable, SocketConnection,
+    Cancellable, IOStream,
 };
-use glib::{GString, Priority};
+use glib::{object::IsA, GString, Priority};
 
 // Default limits
 pub const BUFFER_CAPACITY: usize = 0x400; // 1024
@@ -42,17 +42,16 @@ impl Text {
         }
     }
 
-    /// Asynchronously create new `Self` from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-    /// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    pub fn from_socket_connection_async(
-        socket_connection: SocketConnection,
+    /// Asynchronously create new `Self` from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+    pub fn from_stream_async(
+        stream: impl IsA<IOStream>,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
         on_complete: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
     ) {
-        read_all_from_socket_connection_async(
+        read_all_from_stream_async(
             Vec::with_capacity(BUFFER_CAPACITY),
-            socket_connection,
+            stream,
             match cancellable {
                 Some(value) => Some(value),
                 None => None::<Cancellable>,
@@ -78,21 +77,18 @@ impl Text {
 
 // Tools
 
-/// Asynchronously read all bytes from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-/// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+/// Asynchronously read all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 ///
-/// Return UTF-8 buffer collected.
-///
-/// * this function implements low-level helper for `Text::from_socket_connection_async`, also provides public API for external integrations
-/// * requires `SocketConnection` instead of `InputStream` to keep connection alive (by increasing reference count in async context) @TODO
-pub fn read_all_from_socket_connection_async(
+/// Return UTF-8 buffer collected
+/// * require `IOStream` reference to keep `Connection` active in async thread
+pub fn read_all_from_stream_async(
     mut buffer: Vec<u8>,
-    socket_connection: SocketConnection,
+    stream: impl IsA<IOStream>,
     cancelable: Option<Cancellable>,
     priority: Priority,
     callback: impl FnOnce(Result<Vec<u8>, (Error, Option<&str>)>) + 'static,
 ) {
-    socket_connection.input_stream().read_bytes_async(
+    stream.input_stream().read_bytes_async(
         BUFFER_CAPACITY,
         priority,
         cancelable.clone().as_ref(),
@@ -114,13 +110,7 @@ pub fn read_all_from_socket_connection_async(
                 }
 
                 // Continue bytes reading
-                read_all_from_socket_connection_async(
-                    buffer,
-                    socket_connection,
-                    cancelable,
-                    priority,
-                    callback,
-                );
+                read_all_from_stream_async(buffer, stream, cancelable, priority, callback);
             }
             Err(reason) => callback(Err((Error::InputStream, Some(reason.message())))),
         },

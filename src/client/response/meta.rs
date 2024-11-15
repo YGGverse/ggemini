@@ -15,9 +15,9 @@ pub use status::Status;
 
 use gio::{
     prelude::{IOStreamExt, InputStreamExtManual},
-    Cancellable, SocketConnection,
+    Cancellable, IOStream,
 };
-use glib::Priority;
+use glib::{object::IsA, Priority};
 
 pub const MAX_LEN: usize = 0x400; // 1024
 
@@ -95,17 +95,16 @@ impl Meta {
         }
     }
 
-    /// Asynchronously create new `Self` from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-    /// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    pub fn from_socket_connection_async(
-        socket_connection: SocketConnection,
+    /// Asynchronously create new `Self` from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+    pub fn from_stream_async(
+        stream: impl IsA<IOStream>,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
         on_complete: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
     ) {
-        read_from_socket_connection_async(
+        read_from_stream_async(
             Vec::with_capacity(MAX_LEN),
-            socket_connection,
+            stream,
             match cancellable {
                 Some(value) => Some(value),
                 None => None::<Cancellable>,
@@ -138,21 +137,18 @@ impl Meta {
 
 // Tools
 
-/// Asynchronously read all meta bytes from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-/// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+/// Asynchronously read all meta bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 ///
-/// Return UTF-8 buffer collected.
-///
-/// * this function implements low-level helper for `Meta::from_socket_connection_async`, also provides public API for external integrations
-/// * requires `SocketConnection` instead of `InputStream` to keep connection alive (by increasing reference count in async context) @TODO
-pub fn read_from_socket_connection_async(
+/// Return UTF-8 buffer collected
+/// * require `IOStream` reference to keep `Connection` active in async thread
+pub fn read_from_stream_async(
     mut buffer: Vec<u8>,
-    connection: SocketConnection,
+    stream: impl IsA<IOStream>,
     cancellable: Option<Cancellable>,
     priority: Priority,
     on_complete: impl FnOnce(Result<Vec<u8>, (Error, Option<&str>)>) + 'static,
 ) {
-    connection.input_stream().read_async(
+    stream.input_stream().read_async(
         vec![0],
         priority,
         cancellable.clone().as_ref(),
@@ -165,9 +161,9 @@ pub fn read_from_socket_connection_async(
 
                 // Read next byte without record
                 if bytes.contains(&b'\r') {
-                    return read_from_socket_connection_async(
+                    return read_from_stream_async(
                         buffer,
-                        connection,
+                        stream,
                         cancellable,
                         priority,
                         on_complete,
@@ -183,13 +179,7 @@ pub fn read_from_socket_connection_async(
                 buffer.append(&mut bytes);
 
                 // Continue
-                read_from_socket_connection_async(
-                    buffer,
-                    connection,
-                    cancellable,
-                    priority,
-                    on_complete,
-                );
+                read_from_stream_async(buffer, stream, cancellable, priority, on_complete);
             }
             Err((_, reason)) => on_complete(Err((Error::InputStream, Some(reason.message())))),
         },

@@ -3,33 +3,18 @@ pub use error::Error;
 
 use gio::{
     prelude::{IOStreamExt, InputStreamExt, MemoryInputStreamExt},
-    Cancellable, MemoryInputStream, SocketConnection,
+    Cancellable, IOStream, MemoryInputStream,
 };
-use glib::{Bytes, Priority};
+use glib::{object::IsA, Bytes, Priority};
 
 /// Asynchronously create new [MemoryInputStream](https://docs.gtk.org/gio/class.MemoryInputStream.html)
-/// from [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-/// for given [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+/// from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 ///
-/// Useful to create dynamically allocated, memory-safe buffer
-/// from remote connections, where final size of target data could not be known by Gemini protocol restrictions.
-/// Also, could be useful for [Pixbuf](https://docs.gtk.org/gdk-pixbuf/class.Pixbuf.html) or
-/// loading widgets like [Spinner](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Spinner.html)
-/// to display bytes on async data loading.
-///
-/// * this function takes entire `SocketConnection` reference (not `MemoryInputStream`) just to keep connection alive in the async context
-///
-/// **Implementation**
-///
-/// Implements low-level `read_all_from_socket_connection_async` function:
-/// * recursively read all bytes from `InputStream` for `SocketConnection` according to `bytes_in_chunk` argument
-/// * calculates total bytes length on every chunk iteration, validate sum with `bytes_total_limit` argument
-/// * stop reading `InputStream` with `Result` on zero bytes in chunk received
-/// * applies callback functions:
-///   * `on_chunk` - return reference to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html) and `bytes_total` collected for every chunk in reading loop
-///   * `on_complete` - return `MemoryInputStream` on success or `Error` on failure as `Result`
-pub fn from_socket_connection_async(
-    socket_connection: SocketConnection,
+/// **Useful for**
+/// * safe read (of memory overflow) to dynamically allocated buffer, where final size of target data unknown
+/// * calculate bytes processed on chunk load
+pub fn from_stream_async(
+    base_io_stream: impl IsA<IOStream>,
     cancelable: Option<Cancellable>,
     priority: Priority,
     bytes_in_chunk: usize,
@@ -37,9 +22,9 @@ pub fn from_socket_connection_async(
     on_chunk: impl Fn((Bytes, usize)) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
 ) {
-    read_all_from_socket_connection_async(
+    read_all_from_stream_async(
         MemoryInputStream::new(),
-        socket_connection,
+        base_io_stream,
         cancelable,
         priority,
         bytes_in_chunk,
@@ -50,32 +35,12 @@ pub fn from_socket_connection_async(
     );
 }
 
-/// Low-level helper for `from_socket_connection_async` function,
-/// also provides public API for external usage.
-///
-/// Asynchronously read [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-/// from [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-/// to given [MemoryInputStream](https://docs.gtk.org/gio/class.MemoryInputStream.html).
-///
-/// Useful to create dynamically allocated, memory-safe buffer
-/// from remote connections, where final size of target data could not be known by Gemini protocol restrictions.
-/// Also, could be useful for [Pixbuf](https://docs.gtk.org/gdk-pixbuf/class.Pixbuf.html) or
-/// loading widgets like [Spinner](https://gnome.pages.gitlab.gnome.org/libadwaita/doc/main/class.Spinner.html)
-/// to display bytes on async data loading.
-///
-/// * this function takes entire `SocketConnection` reference (not `MemoryInputStream`) just to keep connection alive in the async context
-///
-/// **Implementation**
-///
-/// * recursively read all bytes from `InputStream` for `SocketConnection` according to `bytes_in_chunk` argument
-/// * calculates total bytes length on every chunk iteration, validate sum with `bytes_total_limit` argument
-/// * stop reading `InputStream` with `Result` on zero bytes in chunk received, otherwise continue next chunk request in loop
-/// * applies callback functions:
-///   * `on_chunk` - return reference to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html) and `bytes_total` collected for every chunk in reading loop
-///   * `on_complete` - return `MemoryInputStream` on success or `Error` on failure as `Result`
-pub fn read_all_from_socket_connection_async(
+/// Asynchronously read entire [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
+/// from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+/// * require `IOStream` reference to keep `Connection` active in async thread
+pub fn read_all_from_stream_async(
     memory_input_stream: MemoryInputStream,
-    socket_connection: SocketConnection,
+    base_io_stream: impl IsA<IOStream>,
     cancelable: Option<Cancellable>,
     priority: Priority,
     bytes_in_chunk: usize,
@@ -84,7 +49,7 @@ pub fn read_all_from_socket_connection_async(
     on_chunk: impl Fn((Bytes, usize)) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
 ) {
-    socket_connection.input_stream().read_bytes_async(
+    base_io_stream.input_stream().read_bytes_async(
         bytes_in_chunk,
         priority,
         cancelable.clone().as_ref(),
@@ -110,9 +75,9 @@ pub fn read_all_from_socket_connection_async(
                 memory_input_stream.add_bytes(&bytes);
 
                 // Continue
-                read_all_from_socket_connection_async(
+                read_all_from_stream_async(
                     memory_input_stream,
-                    socket_connection,
+                    base_io_stream,
                     cancelable,
                     priority,
                     bytes_in_chunk,
