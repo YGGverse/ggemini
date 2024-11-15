@@ -43,7 +43,7 @@ impl Meta {
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(slice) => {
                 // Parse data
-                let data = Data::from_utf8(&slice);
+                let data = Data::from_utf8(slice);
 
                 if let Err(reason) = data {
                     return Err((
@@ -57,7 +57,7 @@ impl Meta {
 
                 // MIME
 
-                let mime = Mime::from_utf8(&slice);
+                let mime = Mime::from_utf8(slice);
 
                 if let Err(reason) = mime {
                     return Err((
@@ -72,7 +72,7 @@ impl Meta {
 
                 // Status
 
-                let status = Status::from_utf8(&slice);
+                let status = Status::from_utf8(slice);
 
                 if let Err(reason) = status {
                     return Err((

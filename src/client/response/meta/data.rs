@@ -22,7 +22,7 @@ impl Data {
     /// from entire response or just header slice
     ///
     /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
-    /// that does not expect any data in header
+    ///   that does not expect any data in header
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
         // Define max buffer length for this method
         const MAX_LEN: usize = 0x400; // 1024

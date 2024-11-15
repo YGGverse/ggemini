@@ -33,9 +33,9 @@ impl Mime {
     /// Create new `Self` from UTF-8 buffer (that includes **header**)
     ///
     /// * result could be `None` for some [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
-    /// that does not expect MIME type in header
+    ///   that does not expect MIME type in header
     /// * includes `Self::from_string` parser,
-    /// it means that given buffer should contain some **header** (not filepath or any other type of strings)
+    ///   it means that given buffer should contain some **header** (not filepath or any other type of strings)
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
         // Define max buffer length for this method
         const MAX_LEN: usize = 0x400; // 1024

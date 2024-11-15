@@ -27,11 +27,8 @@ pub fn from_stream_async(
         base_io_stream,
         cancelable,
         priority,
-        bytes_in_chunk,
-        bytes_total_limit,
-        0, // initial `bytes_total` value
-        on_chunk,
-        on_complete,
+        (bytes_in_chunk, bytes_total_limit, 0),
+        (on_chunk, on_complete),
     );
 }
 
@@ -43,12 +40,15 @@ pub fn read_all_from_stream_async(
     base_io_stream: impl IsA<IOStream>,
     cancelable: Option<Cancellable>,
     priority: Priority,
-    bytes_in_chunk: usize,
-    bytes_total_limit: usize,
-    bytes_total: usize,
-    on_chunk: impl Fn((Bytes, usize)) + 'static,
-    on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
+    bytes: (usize, usize, usize),
+    callback: (
+        impl Fn((Bytes, usize)) + 'static,
+        impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
+    ),
 ) {
+    let (on_chunk, on_complete) = callback;
+    let (bytes_in_chunk, bytes_total_limit, bytes_total) = bytes;
+
     base_io_stream.input_stream().read_bytes_async(
         bytes_in_chunk,
         priority,
@@ -80,11 +80,8 @@ pub fn read_all_from_stream_async(
                     base_io_stream,
                     cancelable,
                     priority,
-                    bytes_in_chunk,
-                    bytes_total_limit,
-                    bytes_total,
-                    on_chunk,
-                    on_complete,
+                    (bytes_in_chunk, bytes_total_limit, bytes_total),
+                    (on_chunk, on_complete),
                 );
             }
             Err(reason) => {
