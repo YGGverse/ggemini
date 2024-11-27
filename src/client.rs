@@ -38,7 +38,7 @@ impl Client {
         // Connect events
         socket.connect_event(move |_, event, _, stream| {
             // This condition have effect only for guest TLS connections
-            // * for user certificates validation, use `Connection` auth
+            // * for user certificates validation, use `Connection` impl
             if event == SocketClientEvent::TlsHandshaking {
                 // Begin guest certificate validation
                 stream
@@ -82,7 +82,7 @@ impl Client {
                     .as_ref(),
                     move |result| match result {
                         Ok(connection) => {
-                            match Connection::new_for(
+                            match Connection::new_wrap(
                                 &connection,
                                 match certificate {
                                     Some(ref certificate) => Some(&certificate.tls_certificate),

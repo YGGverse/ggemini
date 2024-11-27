@@ -16,7 +16,7 @@ impl Connection {
     // Constructors
 
     /// Create new `Self`
-    pub fn new_for(
+    pub fn new_wrap(
         socket_connection: &SocketConnection,
         certificate: Option<&TlsCertificate>,
         server_identity: Option<&NetworkAddress>,
@@ -28,10 +28,13 @@ impl Connection {
         Ok(Self {
             socket_connection: socket_connection.clone(),
             tls_client_connection: match certificate {
-                Some(certificate) => match auth(socket_connection, certificate, server_identity) {
-                    Ok(tls_client_connection) => Some(tls_client_connection),
-                    Err(reason) => return Err(reason),
-                },
+                Some(certificate) => {
+                    match new_tls_client_connection(socket_connection, certificate, server_identity)
+                    {
+                        Ok(tls_client_connection) => Some(tls_client_connection),
+                        Err(reason) => return Err(reason),
+                    }
+                }
                 None => None,
             },
         })
@@ -49,7 +52,7 @@ impl Connection {
 
 // Tools
 
-pub fn auth(
+pub fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     certificate: &TlsCertificate,
     server_identity: Option<&NetworkAddress>,
