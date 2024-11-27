@@ -38,7 +38,7 @@ impl Client {
     // Actions
 
     /// Make async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
-    /// callback with `Result`on success or `Error` on failure.
+    /// callback with `Response`on success or `Error` on failure.
     /// * creates new [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// * session management by Glib TLS Backend
     pub fn request_async(
@@ -91,7 +91,7 @@ impl Client {
 }
 
 /// Make new request for constructed `Connection`
-/// * callback with `Result`on success or `Error` on failure
+/// * callback with `Response`on success or `Error` on failure
 pub fn request_async(
     connection: Connection,
     query: String,
