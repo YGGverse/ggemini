@@ -19,10 +19,10 @@ impl Connection {
     // Constructors
 
     /// Create new `Self`
-    pub fn from(
-        network_address: NetworkAddress, // @TODO struct cert as sni
-        socket_connection: SocketConnection,
-        certificate: Option<TlsCertificate>,
+    pub fn new_for(
+        socket_connection: &SocketConnection,
+        certificate: Option<&TlsCertificate>,
+        server_identity: Option<&NetworkAddress>,
     ) -> Result<Self, Error> {
         if socket_connection.is_closed() {
             return Err(Error::SocketConnectionClosed);
@@ -31,7 +31,7 @@ impl Connection {
         Ok(Self {
             socket_connection: socket_connection.clone(),
             tls_client_connection: match certificate {
-                Some(certificate) => match auth(network_address, socket_connection, certificate) {
+                Some(certificate) => match auth(socket_connection, certificate, server_identity) {
                     Ok(tls_client_connection) => Some(tls_client_connection),
                     Err(reason) => return Err(reason),
                 },
@@ -53,19 +53,19 @@ impl Connection {
 // Tools
 
 pub fn auth(
-    server_identity: NetworkAddress, // @TODO impl IsA<SocketConnectable> ?
-    socket_connection: SocketConnection,
-    certificate: TlsCertificate,
+    socket_connection: &SocketConnection,
+    certificate: &TlsCertificate,
+    server_identity: Option<&NetworkAddress>,
 ) -> Result<TlsClientConnection, Error> {
     if socket_connection.is_closed() {
         return Err(Error::SocketConnectionClosed);
     }
 
     // https://geminiprotocol.net/docs/protocol-specification.gmi#the-use-of-tls
-    match TlsClientConnection::new(&socket_connection, Some(&server_identity)) {
+    match TlsClientConnection::new(socket_connection, server_identity) {
         Ok(tls_client_connection) => {
             // https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
-            tls_client_connection.set_certificate(&certificate);
+            tls_client_connection.set_certificate(certificate);
 
             // @TODO handle exceptions
             // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections

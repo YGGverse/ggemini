@@ -60,15 +60,22 @@ impl Client {
                     .as_ref(),
                     move |result| match result {
                         Ok(connection) => {
-                            match Connection::from(network_address, connection, certificate) {
+                            match Connection::new_for(
+                                &connection,
+                                certificate.as_ref(),
+                                Some(&network_address),
+                            ) {
                                 Ok(result) => request_async(
                                     result,
                                     uri.to_string(),
                                     match priority {
-                                        Some(priority) => priority,
-                                        None => Priority::DEFAULT,
+                                        Some(priority) => Some(priority),
+                                        None => Some(Priority::DEFAULT),
                                     },
-                                    cancellable.unwrap(), // @TODO
+                                    match cancellable {
+                                        Some(ref cancellable) => Some(cancellable.clone()),
+                                        None => None::<Cancellable>,
+                                    },
                                     move |result| callback(result),
                                 ),
                                 Err(reason) => callback(Err(Error::Connection(reason))),
@@ -83,30 +90,36 @@ impl Client {
     }
 }
 
-// Private helpers
-
-fn request_async(
+/// Make new request for constructed `Connection`
+/// * callback with `Result`on success or `Error` on failure
+pub fn request_async(
     connection: Connection,
     query: String,
-    priority: Priority,
-    cancellable: Cancellable,
+    priority: Option<Priority>,
+    cancellable: Option<Cancellable>,
     callback: impl Fn(Result<Response, Error>) + 'static,
 ) {
     connection.stream().output_stream().write_bytes_async(
         &Bytes::from(format!("{query}\r\n").as_bytes()),
-        priority,
-        Some(&cancellable.clone()),
+        match priority {
+            Some(priority) => priority,
+            None => Priority::DEFAULT,
+        },
+        match cancellable {
+            Some(ref cancellable) => Some(cancellable.clone()),
+            None => None::<Cancellable>,
+        }
+        .as_ref(),
         move |result| match result {
-            Ok(_) => Response::from_request_async(
-                connection,
-                Some(priority),
-                Some(cancellable),
-                move |result| match result {
-                    Ok(response) => callback(Ok(response)),
-                    Err(reason) => callback(Err(Error::Response(reason))),
-                },
-            ),
-            Err(reason) => callback(Err(Error::Write(reason))),
+            Ok(_) => {
+                Response::from_request_async(connection, priority, cancellable, move |result| {
+                    callback(match result {
+                        Ok(response) => Ok(response),
+                        Err(reason) => Err(Error::Response(reason)),
+                    })
+                })
+            }
+            Err(reason) => callback(Err(Error::OutputStream(reason))),
         },
     );
 }
