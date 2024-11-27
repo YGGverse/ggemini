@@ -50,6 +50,10 @@ impl Client {
         certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
+        // Toggle socket mode
+        // * guest sessions will not work without!
+        self.socket.set_tls(certificate.is_none());
+
         match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
             Ok(network_address) => {
                 self.socket.connect_async(
