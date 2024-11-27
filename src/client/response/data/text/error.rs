@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result};
 pub enum Error {
     BufferOverflow,
     Decode(std::string::FromUtf8Error),
-    InputStreamRead(glib::Error),
+    InputStream(glib::Error),
 }
 
 impl Display for Error {
@@ -16,7 +16,7 @@ impl Display for Error {
             Self::Decode(reason) => {
                 write!(f, "Decode error: {reason}")
             }
-            Self::InputStreamRead(reason) => {
+            Self::InputStream(reason) => {
                 write!(f, "Input stream read error: {reason}")
             }
         }

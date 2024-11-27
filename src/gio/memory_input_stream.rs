@@ -20,7 +20,7 @@ pub fn from_stream_async(
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
     on_chunk: impl Fn((Bytes, usize)) + 'static,
-    on_complete: impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
+    on_complete: impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
 ) {
     read_all_from_stream_async(
         MemoryInputStream::new(),
@@ -43,7 +43,7 @@ pub fn read_all_from_stream_async(
     bytes: (usize, usize, usize),
     callback: (
         impl Fn((Bytes, usize)) + 'static,
-        impl FnOnce(Result<MemoryInputStream, (Error, Option<&str>)>) + 'static,
+        impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
     ),
 ) {
     let (on_chunk, on_complete) = callback;
@@ -63,7 +63,7 @@ pub fn read_all_from_stream_async(
 
                 // Validate max size
                 if bytes_total > bytes_total_limit {
-                    return on_complete(Err((Error::BytesTotal, None)));
+                    return on_complete(Err(Error::BytesTotal(bytes_total, bytes_total_limit)));
                 }
 
                 // No bytes were read, end of stream
@@ -85,7 +85,7 @@ pub fn read_all_from_stream_async(
                 );
             }
             Err(reason) => {
-                on_complete(Err((Error::InputStream, Some(reason.message()))));
+                on_complete(Err(Error::InputStream(reason)));
             }
         },
     );

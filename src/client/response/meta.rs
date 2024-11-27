@@ -147,7 +147,7 @@ pub fn read_from_stream_async(
                 // Continue
                 read_from_stream_async(buffer, stream, cancellable, priority, on_complete);
             }
-            Err((data, reason)) => on_complete(Err(Error::InputStreamRead(data, reason))),
+            Err((data, reason)) => on_complete(Err(Error::InputStream(data, reason))),
         },
     );
 }

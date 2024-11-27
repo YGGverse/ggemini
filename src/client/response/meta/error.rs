@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 #[derive(Debug)]
 pub enum Error {
     Data(super::data::Error),
-    InputStreamRead(Vec<u8>, glib::Error),
+    InputStream(Vec<u8>, glib::Error),
     Mime(super::mime::Error),
     Protocol,
     Status(super::status::Error),
@@ -15,7 +15,7 @@ impl Display for Error {
             Self::Data(reason) => {
                 write!(f, "Data error: {reason}")
             }
-            Self::InputStreamRead(_, reason) => {
+            Self::InputStream(_, reason) => {
                 // @TODO
                 write!(f, "Input stream error: {reason}")
             }

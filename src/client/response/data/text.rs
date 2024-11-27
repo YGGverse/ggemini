@@ -111,7 +111,7 @@ pub fn read_all_from_stream_async(
                 // Continue bytes reading
                 read_all_from_stream_async(buffer, stream, cancelable, priority, callback);
             }
-            Err(reason) => callback(Err(Error::InputStreamRead(reason))),
+            Err(reason) => callback(Err(Error::InputStream(reason))),
         },
     );
 }
