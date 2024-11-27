@@ -1,10 +1,12 @@
 //! High-level client API to interact with Gemini Socket Server:
 //! * https://geminiprotocol.net/docs/protocol-specification.gmi
 
+pub mod certificate;
 pub mod connection;
 pub mod error;
 pub mod response;
 
+pub use certificate::Certificate;
 pub use connection::Connection;
 pub use error::Error;
 pub use response::Response;

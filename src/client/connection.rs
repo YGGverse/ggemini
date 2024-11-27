@@ -1,7 +1,4 @@
-pub mod certificate;
 pub mod error;
-
-pub use certificate::Certificate;
 pub use error::Error;
 
 use gio::{

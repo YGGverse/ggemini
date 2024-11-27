@@ -8,15 +8,20 @@ use gio::{prelude::TlsCertificateExt, TlsCertificate};
 use glib::DateTime;
 
 pub struct Certificate {
-    tls_certificate: TlsCertificate,
+    pub scope: Scope,
+    pub tls_certificate: TlsCertificate,
 }
 
 impl Certificate {
     // Constructors
 
     /// Create new `Self`
-    pub fn from_pem(pem: &str) -> Result<Self, Error> {
+    pub fn from_pem(pem: &str, scope_url: &str) -> Result<Self, Error> {
         Ok(Self {
+            scope: match Scope::from_url(scope_url) {
+                Ok(scope) => scope,
+                Err(reason) => return Err(Error::Scope(reason)),
+            },
             tls_certificate: match TlsCertificate::from_pem(&pem) {
                 Ok(tls_certificate) => {
                     // Validate expiration time
