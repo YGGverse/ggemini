@@ -25,7 +25,7 @@ impl Connection {
         certificate: Option<TlsCertificate>,
     ) -> Result<Self, Error> {
         if socket_connection.is_closed() {
-            return Err(Error::Closed);
+            return Err(Error::SocketConnectionClosed);
         }
 
         Ok(Self {
