@@ -14,8 +14,8 @@ pub struct Scope {
 impl Scope {
     // Constructors
 
-    /// Create new `Self` for given `url` string
-    /// * check URI parts required for valid `Scope` build
+    /// Create new `Self` for given `url`
+    /// * external validator MAY decline `Certificate` if `Scope` defined out of protocol range
     pub fn from_url(url: &str) -> Result<Self, Error> {
         match Uri::parse(url, UriFlags::NONE) {
             Ok(uri) => {
