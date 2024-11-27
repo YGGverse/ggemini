@@ -43,7 +43,7 @@ impl Status {
         match buffer.get(0..2) {
             Some(value) => match GString::from_utf8(value.to_vec()) {
                 Ok(string) => Self::from_string(string.as_str()),
-                Err(_) => Err(Error::Decode),
+                Err(reason) => Err(Error::Decode(reason)),
             },
             None => Err(Error::Protocol),
         }

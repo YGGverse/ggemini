@@ -16,7 +16,7 @@ pub const BUFFER_MAX_SIZE: usize = 0xfffff; // 1M
 
 /// Container for text-based response data
 pub struct Text {
-    data: GString,
+    pub data: GString,
 }
 
 impl Default for Text {
@@ -41,10 +41,10 @@ impl Text {
     }
 
     /// Create new `Self` from UTF-8 buffer
-    pub fn from_utf8(buffer: &[u8]) -> Result<Self, (Error, Option<&str>)> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match GString::from_utf8(buffer.into()) {
             Ok(data) => Ok(Self::from_string(&data)),
-            Err(_) => Err((Error::Decode, None)),
+            Err(reason) => Err(Error::Decode(reason)),
         }
     }
 
@@ -53,7 +53,7 @@ impl Text {
         stream: impl IsA<IOStream>,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
-        on_complete: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
+        on_complete: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         read_all_from_stream_async(
             Vec::with_capacity(BUFFER_CAPACITY),
@@ -72,13 +72,6 @@ impl Text {
             },
         );
     }
-
-    // Getters
-
-    /// Get reference to `Self` data
-    pub fn data(&self) -> &GString {
-        &self.data
-    }
 }
 
 // Tools
@@ -92,7 +85,7 @@ pub fn read_all_from_stream_async(
     stream: impl IsA<IOStream>,
     cancelable: Option<Cancellable>,
     priority: Priority,
-    callback: impl FnOnce(Result<Vec<u8>, (Error, Option<&str>)>) + 'static,
+    callback: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
 ) {
     stream.input_stream().read_bytes_async(
         BUFFER_CAPACITY,
@@ -107,7 +100,7 @@ pub fn read_all_from_stream_async(
 
                 // Validate overflow
                 if buffer.len() + bytes.len() > BUFFER_MAX_SIZE {
-                    return callback(Err((Error::BufferOverflow, None)));
+                    return callback(Err(Error::BufferOverflow));
                 }
 
                 // Save chunks to buffer
@@ -118,7 +111,7 @@ pub fn read_all_from_stream_async(
                 // Continue bytes reading
                 read_all_from_stream_async(buffer, stream, cancelable, priority, callback);
             }
-            Err(reason) => callback(Err((Error::InputStream, Some(reason.message())))),
+            Err(reason) => callback(Err(Error::InputStreamRead(reason))),
         },
     );
 }

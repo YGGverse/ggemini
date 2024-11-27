@@ -12,7 +12,7 @@ use glib::GString;
 /// * placeholder text for 10, 11 status
 /// * URL string for 30, 31 status
 pub struct Data {
-    value: GString,
+    pub value: GString,
 }
 
 impl Data {
@@ -52,16 +52,10 @@ impl Data {
                         false => Some(Self { value }),
                         true => None,
                     }),
-                    Err(_) => Err(Error::Decode),
+                    Err(reason) => Err(Error::Decode(reason)),
                 }
             }
             None => Err(Error::Protocol),
         }
-    }
-
-    // Getters
-
-    pub fn value(&self) -> &GString {
-        &self.value
     }
 }

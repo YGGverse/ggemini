@@ -22,9 +22,9 @@ use glib::{object::IsA, Priority};
 pub const MAX_LEN: usize = 0x400; // 1024
 
 pub struct Meta {
-    status: Status,
-    data: Option<Data>,
-    mime: Option<Mime>,
+    pub status: Status,
+    pub data: Option<Data>,
+    pub mime: Option<Mime>,
     // @TODO
     // charset: Option<Charset>,
     // language: Option<Language>,
@@ -35,7 +35,7 @@ impl Meta {
 
     /// Create new `Self` from UTF-8 buffer
     /// * supports entire response or just meta slice
-    pub fn from_utf8(buffer: &[u8]) -> Result<Self, (Error, Option<&str>)> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         // Calculate buffer length once
         let len = buffer.len();
 
@@ -46,13 +46,7 @@ impl Meta {
                 let data = Data::from_utf8(slice);
 
                 if let Err(reason) = data {
-                    return Err((
-                        match reason {
-                            data::Error::Decode => Error::DataDecode,
-                            data::Error::Protocol => Error::DataProtocol,
-                        },
-                        None,
-                    ));
+                    return Err(Error::Data(reason));
                 }
 
                 // MIME
@@ -60,14 +54,7 @@ impl Meta {
                 let mime = Mime::from_utf8(slice);
 
                 if let Err(reason) = mime {
-                    return Err((
-                        match reason {
-                            mime::Error::Decode => Error::MimeDecode,
-                            mime::Error::Protocol => Error::MimeProtocol,
-                            mime::Error::Undefined => Error::MimeUndefined,
-                        },
-                        None,
-                    ));
+                    return Err(Error::Mime(reason));
                 }
 
                 // Status
@@ -75,14 +62,7 @@ impl Meta {
                 let status = Status::from_utf8(slice);
 
                 if let Err(reason) = status {
-                    return Err((
-                        match reason {
-                            status::Error::Decode => Error::StatusDecode,
-                            status::Error::Protocol => Error::StatusProtocol,
-                            status::Error::Undefined => Error::StatusUndefined,
-                        },
-                        None,
-                    ));
+                    return Err(Error::Status(reason));
                 }
 
                 Ok(Self {
@@ -91,7 +71,7 @@ impl Meta {
                     status: status.unwrap(),
                 })
             }
-            None => Err((Error::Protocol, None)),
+            None => Err(Error::Protocol),
         }
     }
 
@@ -100,7 +80,7 @@ impl Meta {
         stream: impl IsA<IOStream>,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
-        on_complete: impl FnOnce(Result<Self, (Error, Option<&str>)>) + 'static,
+        on_complete: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         read_from_stream_async(
             Vec::with_capacity(MAX_LEN),
@@ -119,20 +99,6 @@ impl Meta {
             },
         );
     }
-
-    // Getters
-
-    pub fn status(&self) -> &Status {
-        &self.status
-    }
-
-    pub fn data(&self) -> &Option<Data> {
-        &self.data
-    }
-
-    pub fn mime(&self) -> &Option<Mime> {
-        &self.mime
-    }
 }
 
 // Tools
@@ -146,7 +112,7 @@ pub fn read_from_stream_async(
     stream: impl IsA<IOStream>,
     cancellable: Option<Cancellable>,
     priority: Priority,
-    on_complete: impl FnOnce(Result<Vec<u8>, (Error, Option<&str>)>) + 'static,
+    on_complete: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
 ) {
     stream.input_stream().read_async(
         vec![0],
@@ -156,7 +122,7 @@ pub fn read_from_stream_async(
             Ok((mut bytes, size)) => {
                 // Expect valid header length
                 if size == 0 || buffer.len() >= MAX_LEN {
-                    return on_complete(Err((Error::Protocol, None)));
+                    return on_complete(Err(Error::Protocol));
                 }
 
                 // Read next byte without record
@@ -181,7 +147,7 @@ pub fn read_from_stream_async(
                 // Continue
                 read_from_stream_async(buffer, stream, cancellable, priority, on_complete);
             }
-            Err((_, reason)) => on_complete(Err((Error::InputStream, Some(reason.message())))),
+            Err((data, reason)) => on_complete(Err(Error::InputStreamRead(data, reason))),
         },
     );
 }
