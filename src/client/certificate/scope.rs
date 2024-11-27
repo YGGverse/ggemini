@@ -1,6 +1,8 @@
 pub mod error;
 pub use error::Error;
 
+use crate::client::DEFAULT_PORT;
+use gio::NetworkAddress;
 use glib::{GString, Uri, UriFlags, UriHideFlags};
 
 /// Scope implement path prefix to apply TLS authorization for
@@ -37,5 +39,15 @@ impl Scope {
     pub fn to_string(&self) -> GString {
         self.uri
             .to_string_partial(UriHideFlags::QUERY | UriHideFlags::FRAGMENT)
+    }
+
+    /// Get [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html)
+    /// implement [SocketConnectable](https://docs.gtk.org/gio/iface.SocketConnectable.html) interface
+    /// * useful as [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication) in TLS context
+    pub fn to_network_address(&self) -> Result<NetworkAddress, Error> {
+        match crate::gio::network_address::from_uri(&self.uri, DEFAULT_PORT) {
+            Ok(network_address) => Ok(network_address),
+            Err(reason) => Err(Error::NetworkAddress(reason)),
+        }
     }
 }

@@ -3,6 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 #[derive(Debug)]
 pub enum Error {
     Host,
+    NetworkAddress(crate::gio::network_address::Error),
     Scheme,
     Uri(glib::Error),
 }
@@ -12,6 +13,9 @@ impl Display for Error {
         match self {
             Self::Host => {
                 write!(f, "Host required")
+            }
+            Self::NetworkAddress(reason) => {
+                write!(f, "Could not parse network address: {reason}")
             }
             Self::Scheme => {
                 write!(f, "Scope does not match `gemini`")
