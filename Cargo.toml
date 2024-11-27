@@ -12,8 +12,7 @@ repository = "https://github.com/YGGverse/ggemini"
 [dependencies.gio]
 package = "gio"
 version = "0.20.4"
-# currently not required
-# features = ["v2_70"]
+features = ["v2_70"]
 
 [dependencies.glib]
 package = "glib"
