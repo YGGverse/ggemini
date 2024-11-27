@@ -12,10 +12,11 @@ pub use error::Error;
 pub use response::Response;
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt},
-    Cancellable, SocketClient, SocketProtocol, TlsCertificate,
+    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
+    Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
+    TlsClientConnection,
 };
-use glib::{Bytes, Priority, Uri};
+use glib::{object::Cast, Bytes, Priority, Uri};
 
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
@@ -28,11 +29,28 @@ impl Client {
 
     /// Create new `Self`
     pub fn new() -> Self {
+        // Init new socket
         let socket = SocketClient::new();
 
+        // Setup initial configuration for Gemini Protocol
         socket.set_protocol(SocketProtocol::Tcp);
         socket.set_timeout(DEFAULT_TIMEOUT);
 
+        // Connect events
+        socket.connect_event(move |_, event, _, stream| {
+            // This condition have effect only for guest TLS connections
+            // * for user certificates validation, use `Connection` impl
+            if event == SocketClientEvent::TlsHandshaking {
+                // Begin guest certificate validation
+                stream
+                    .unwrap()
+                    .dynamic_cast_ref::<TlsClientConnection>()
+                    .unwrap()
+                    .connect_accept_certificate(|_, _, _| true); // @TODO
+            }
+        });
+
+        // Done
         Self { socket }
     }
 
