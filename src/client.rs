@@ -13,8 +13,7 @@ pub use response::Response;
 
 use gio::{
     prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
-    Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
-    TlsClientConnection,
+    Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsClientConnection,
 };
 use glib::{object::Cast, Bytes, Priority, Uri};
 
@@ -65,7 +64,7 @@ impl Client {
         uri: Uri,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
-        certificate: Option<TlsCertificate>,
+        certificate: Option<Certificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
         // Toggle socket mode
@@ -85,7 +84,10 @@ impl Client {
                         Ok(connection) => {
                             match Connection::new_for(
                                 &connection,
-                                certificate.as_ref(),
+                                match certificate {
+                                    Some(ref certificate) => Some(&certificate.tls_certificate),
+                                    None => None,
+                                },
                                 Some(&network_address),
                             ) {
                                 Ok(result) => request_async(
