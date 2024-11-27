@@ -11,7 +11,7 @@ pub use response::Response;
 
 use gio::{
     prelude::{IOStreamExt, OutputStreamExt, SocketClientExt},
-    Cancellable, NetworkAddress, SocketClient, SocketProtocol, TlsCertificate,
+    Cancellable, SocketClient, SocketProtocol, TlsCertificate,
 };
 use glib::{Bytes, Priority, Uri};
 
@@ -49,7 +49,7 @@ impl Client {
         certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
-        match network_address_for(&uri) {
+        match crate::gio::network_address::from_uri(&uri, DEFAULT_PORT) {
             Ok(network_address) => {
                 self.socket.connect_async(
                     &network_address.clone(),
@@ -78,28 +78,12 @@ impl Client {
                     },
                 );
             }
-            Err(reason) => callback(Err(reason)),
+            Err(reason) => callback(Err(Error::NetworkAddress(reason))),
         };
     }
 }
 
 // Private helpers
-
-/// [SocketConnectable](https://docs.gtk.org/gio/iface.SocketConnectable.html) /
-/// [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
-fn network_address_for(uri: &Uri) -> Result<NetworkAddress, Error> {
-    Ok(NetworkAddress::new(
-        &match uri.host() {
-            Some(host) => host,
-            None => return Err(Error::Connectable(uri.to_string())),
-        },
-        if uri.port().is_positive() {
-            uri.port() as u16
-        } else {
-            DEFAULT_PORT
-        },
-    ))
-}
 
 fn request_async(
     connection: Connection,

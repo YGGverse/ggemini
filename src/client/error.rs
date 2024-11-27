@@ -2,11 +2,12 @@ use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug)]
 pub enum Error {
-    Connectable(String),
-    Connection(super::connection::Error),
     Connect(glib::Error),
+    Connectable(String),
+    Connection(crate::client::connection::Error),
+    NetworkAddress(crate::gio::network_address::Error),
     Request(glib::Error),
-    Response(super::response::Error),
+    Response(crate::client::response::Error),
     Write(glib::Error),
 }
 
@@ -21,6 +22,9 @@ impl Display for Error {
             }
             Self::Connect(reason) => {
                 write!(f, "Connect error: {reason}")
+            }
+            Self::NetworkAddress(reason) => {
+                write!(f, "Network address error: {reason}")
             }
             Self::Request(reason) => {
                 write!(f, "Request error: {reason}")
