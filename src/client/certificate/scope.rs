@@ -6,7 +6,8 @@ use gio::NetworkAddress;
 use glib::{GString, Uri, UriFlags, UriHideFlags};
 
 /// Scope implement path prefix to apply TLS authorization for
-/// * https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
+/// * external validator MAY decline `Certificate` if `Scope` defined out of protocol range
+/// * [read more](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60)
 pub struct Scope {
     uri: Uri,
 }
@@ -15,7 +16,6 @@ impl Scope {
     // Constructors
 
     /// Create new `Self` for given `url`
-    /// * external validator MAY decline `Certificate` if `Scope` defined out of protocol range
     pub fn from_url(url: &str) -> Result<Self, Error> {
         match Uri::parse(url, UriFlags::NONE) {
             Ok(uri) => {
