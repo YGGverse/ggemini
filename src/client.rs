@@ -17,7 +17,6 @@ use gio::{
 };
 use glib::{Bytes, Priority, Uri};
 
-pub const DEFAULT_PORT: u16 = 1965;
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
 pub struct Client {
@@ -51,7 +50,7 @@ impl Client {
         certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
-        match crate::gio::network_address::from_uri(&uri, DEFAULT_PORT) {
+        match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
             Ok(network_address) => {
                 self.socket.connect_async(
                     &network_address.clone(),

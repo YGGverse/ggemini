@@ -1,7 +1,7 @@
 pub mod error;
 pub use error::Error;
 
-use crate::client::DEFAULT_PORT;
+use crate::DEFAULT_PORT;
 use gio::NetworkAddress;
 use glib::{GString, Uri, UriFlags, UriHideFlags};
 
