@@ -58,7 +58,7 @@ pub fn auth(
     certificate: TlsCertificate,
 ) -> Result<TlsClientConnection, Error> {
     if socket_connection.is_closed() {
-        return Err(Error::Closed);
+        return Err(Error::SocketConnectionClosed);
     }
 
     // https://geminiprotocol.net/docs/protocol-specification.gmi#the-use-of-tls
@@ -77,6 +77,6 @@ pub fn auth(
 
             Ok(tls_client_connection)
         }
-        Err(reason) => Err(Error::Tls(reason)),
+        Err(reason) => Err(Error::TlsClientConnection(reason)),
     }
 }
