@@ -3,7 +3,7 @@ pub use error::Error;
 
 use gio::{
     prelude::{IOStreamExt, TlsConnectionExt},
-    IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
+    Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::object::{Cast, IsA};
 
@@ -43,8 +43,27 @@ impl Connection {
         })
     }
 
+    // Actions
+
+    /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+    /// and [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) if active
+    pub fn close(&self, cancellable: Option<&Cancellable>) {
+        if let Some(ref tls_client_connection) = self.tls_client_connection {
+            if !tls_client_connection.is_closed() {
+                tls_client_connection.close(cancellable);
+            }
+        }
+        if !self.socket_connection.is_closed() {
+            self.socket_connection.close(cancellable);
+        }
+    }
+
     // Getters
 
+    /// Upcast [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+    /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+    /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
+    /// * wanted to keep `Connection` active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
         match self.tls_client_connection.clone() {
             Some(tls_client_connection) => tls_client_connection.upcast::<IOStream>(),
