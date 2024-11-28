@@ -17,9 +17,9 @@ impl Connection {
 
     /// Create new `Self`
     pub fn new_wrap(
-        socket_connection: &SocketConnection,
-        certificate: Option<&TlsCertificate>,
-        server_identity: Option<&NetworkAddress>,
+        socket_connection: SocketConnection,
+        certificate: Option<TlsCertificate>,
+        server_identity: Option<NetworkAddress>,
     ) -> Result<Self, Error> {
         if socket_connection.is_closed() {
             return Err(Error::SocketConnectionClosed);
@@ -29,8 +29,11 @@ impl Connection {
             socket_connection: socket_connection.clone(),
             tls_client_connection: match certificate {
                 Some(certificate) => {
-                    match new_tls_client_connection(socket_connection, certificate, server_identity)
-                    {
+                    match new_tls_client_connection(
+                        &socket_connection,
+                        &certificate,
+                        server_identity.as_ref(),
+                    ) {
                         Ok(tls_client_connection) => Some(tls_client_connection),
                         Err(reason) => return Err(reason),
                     }

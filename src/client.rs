@@ -82,9 +82,9 @@ impl Client {
                     move |result| match result {
                         Ok(connection) => {
                             match Connection::new_wrap(
-                                &connection,
-                                certificate.as_ref(),
-                                Some(&network_address),
+                                connection,
+                                certificate,
+                                Some(network_address),
                             ) {
                                 Ok(result) => request_async(
                                     result,
