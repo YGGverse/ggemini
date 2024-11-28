@@ -1,19 +1,18 @@
 //! High-level client API to interact with Gemini Socket Server:
 //! * https://geminiprotocol.net/docs/protocol-specification.gmi
 
-pub mod certificate;
 pub mod connection;
 pub mod error;
 pub mod response;
 
-pub use certificate::Certificate;
 pub use connection::Connection;
 pub use error::Error;
 pub use response::Response;
 
 use gio::{
     prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
-    Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsClientConnection,
+    Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
+    TlsClientConnection,
 };
 use glib::{object::Cast, Bytes, Priority, Uri};
 
@@ -64,7 +63,7 @@ impl Client {
         uri: Uri,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
-        certificate: Option<Certificate>,
+        certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
         // Toggle socket mode
@@ -84,10 +83,7 @@ impl Client {
                         Ok(connection) => {
                             match Connection::new_wrap(
                                 &connection,
-                                match certificate {
-                                    Some(ref certificate) => Some(&certificate.tls_certificate),
-                                    None => None,
-                                },
+                                certificate.as_ref(),
                                 Some(&network_address),
                             ) {
                                 Ok(result) => request_async(
