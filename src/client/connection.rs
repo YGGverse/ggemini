@@ -47,15 +47,20 @@ impl Connection {
 
     /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// and [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) if active
-    pub fn close(&self, cancellable: Option<&Cancellable>) {
+    pub fn close(&self, cancellable: Option<&Cancellable>) -> Result<(), Error> {
         if let Some(ref tls_client_connection) = self.tls_client_connection {
             if !tls_client_connection.is_closed() {
-                tls_client_connection.close(cancellable);
+                if let Err(reason) = tls_client_connection.close(cancellable) {
+                    return Err(Error::TlsClientConnection(reason));
+                }
             }
         }
         if !self.socket_connection.is_closed() {
-            self.socket_connection.close(cancellable);
+            if let Err(reason) = self.socket_connection.close(cancellable) {
+                return Err(Error::SocketConnection(reason));
+            }
         }
+        Ok(())
     }
 
     // Getters
