@@ -4,13 +4,17 @@
 pub mod connection;
 pub mod error;
 pub mod response;
+pub mod session;
+
+use std::rc::Rc;
 
 pub use connection::Connection;
 pub use error::Error;
 pub use response::Response;
+pub use session::Session;
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsCertificateExt, TlsConnectionExt},
     Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
     TlsClientConnection,
 };
@@ -19,6 +23,7 @@ use glib::{object::Cast, Bytes, Priority, Uri};
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
 pub struct Client {
+    session: Rc<Session>,
     pub socket: SocketClient,
 }
 
@@ -49,15 +54,18 @@ impl Client {
         });
 
         // Done
-        Self { socket }
+        Self {
+            session: Rc::new(Session::new()),
+            socket,
+        }
     }
 
     // Actions
 
-    /// Make async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
+    /// Make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
     /// callback with new `Response`on success or `Error` on failure.
-    /// * creates new [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    /// * session management by Glib TLS Backend
+    /// * call this method ignore default session resumption by Glib TLS backend,
+    ///   implement certificate change ability in application runtime
     pub fn request_async(
         &self,
         uri: Uri,
@@ -70,51 +78,95 @@ impl Client {
         // * guest sessions will not work without!
         self.socket.set_tls(certificate.is_none());
 
-        match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
-            Ok(network_address) => {
-                self.socket.connect_async(
+        // Update previous session available for this request
+        match self.update_session(&uri, certificate.as_ref()) {
+            Ok(()) => match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
+                Ok(network_address) => self.socket.connect_async(
                     &network_address.clone(),
                     match cancellable {
                         Some(ref cancellable) => Some(cancellable.clone()),
                         None => None::<Cancellable>,
                     }
                     .as_ref(),
-                    move |result| match result {
-                        Ok(connection) => {
-                            match Connection::new_wrap(
-                                connection,
-                                certificate,
-                                Some(network_address),
-                            ) {
-                                Ok(result) => request_async(
-                                    result,
-                                    uri.to_string(),
-                                    match priority {
-                                        Some(priority) => Some(priority),
-                                        None => Some(Priority::DEFAULT),
-                                    },
-                                    match cancellable {
-                                        Some(ref cancellable) => Some(cancellable.clone()),
-                                        None => None::<Cancellable>,
-                                    },
-                                    move |result| callback(result),
-                                ),
-                                Err(reason) => callback(Err(Error::Connection(reason))),
+                    {
+                        let session = self.session.clone();
+                        move |result| match result {
+                            Ok(connection) => {
+                                match Connection::new_wrap(
+                                    connection,
+                                    certificate,
+                                    Some(network_address),
+                                ) {
+                                    Ok(connection) => {
+                                        // Wrap connection to shared reference clone semantics
+                                        let connection = Rc::new(connection);
+
+                                        // Update session record
+                                        session.update(uri.to_string(), connection.clone());
+
+                                        // Begin new request
+                                        request_async(
+                                            connection,
+                                            uri.to_string(),
+                                            match priority {
+                                                Some(priority) => Some(priority),
+                                                None => Some(Priority::DEFAULT),
+                                            },
+                                            match cancellable {
+                                                Some(ref cancellable) => Some(cancellable.clone()),
+                                                None => None::<Cancellable>,
+                                            },
+                                            move |result| callback(result),
+                                        )
+                                    }
+                                    Err(reason) => callback(Err(Error::Connection(reason))),
+                                }
                             }
+                            Err(reason) => callback(Err(Error::Connect(reason))),
                         }
-                        Err(reason) => callback(Err(Error::Connect(reason))),
                     },
-                );
+                ),
+                Err(reason) => callback(Err(Error::NetworkAddress(reason))),
+            },
+            Err(reason) => callback(Err(reason)),
+        }
+    }
+
+    /// Update existing session for given request
+    pub fn update_session(
+        &self,
+        uri: &Uri,
+        certificate: Option<&TlsCertificate>,
+    ) -> Result<(), Error> {
+        if let Some(connection) = self.session.get(&uri.to_string()) {
+            // Check connection contain TLS authorization
+            if let Some(ref tls_client_connection) = connection.tls_client_connection {
+                if let Some(new) = certificate {
+                    // Get previous certificate
+                    if let Some(ref old) = tls_client_connection.certificate() {
+                        if !new.is_same(old) {
+                            // Prevent session resumption
+                            // Glib backend restore session in runtime with old certificate
+                            // @TODO keep in mind, until better solution found for TLS 1.3
+                            println!("{:?}", tls_client_connection.handshake(Cancellable::NONE));
+                        }
+                    }
+                }
             }
-            Err(reason) => callback(Err(Error::NetworkAddress(reason))),
-        };
+
+            // Close connection if active yet
+            if let Err(reason) = connection.close(Cancellable::NONE) {
+                return Err(Error::Connection(reason));
+            }
+        }
+        Ok(())
     }
 }
 
 /// Make new request for constructed `Connection`
 /// * callback with new `Response`on success or `Error` on failure
 pub fn request_async(
-    connection: Connection,
+    connection: Rc<Connection>,
     query: String,
     priority: Option<Priority>,
     cancellable: Option<Cancellable>,

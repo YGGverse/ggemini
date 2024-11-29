@@ -10,9 +10,10 @@ pub use meta::Meta;
 use super::Connection;
 use gio::Cancellable;
 use glib::Priority;
+use std::rc::Rc;
 
 pub struct Response {
-    pub connection: Connection,
+    pub connection: Rc<Connection>,
     pub meta: Meta,
 }
 
@@ -20,7 +21,7 @@ impl Response {
     // Constructors
 
     pub fn from_request_async(
-        connection: Connection,
+        connection: Rc<Connection>,
         priority: Option<Priority>,
         cancellable: Option<Cancellable>,
         callback: impl FnOnce(Result<Self, Error>) + 'static,
