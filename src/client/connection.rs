@@ -10,6 +10,7 @@ use glib::object::{Cast, IsA};
 pub struct Connection {
     pub socket_connection: SocketConnection,
     pub tls_client_connection: Option<TlsClientConnection>,
+    pub server_identity: Option<NetworkAddress>,
 }
 
 impl Connection {
@@ -26,6 +27,7 @@ impl Connection {
         }
 
         Ok(Self {
+            server_identity: server_identity.clone(),
             socket_connection: socket_connection.clone(),
             tls_client_connection: match certificate {
                 Some(certificate) => {
@@ -73,6 +75,31 @@ impl Connection {
         match self.tls_client_connection.clone() {
             Some(tls_client_connection) => tls_client_connection.upcast::<IOStream>(),
             None => self.socket_connection.clone().upcast::<IOStream>(),
+        }
+    }
+
+    pub fn tls_client_connection(&self) -> Result<TlsClientConnection, Error> {
+        match self.tls_client_connection.clone() {
+            // User session
+            Some(tls_client_connection) => Ok(tls_client_connection),
+            // Guest session
+            None => {
+                // Create new wrapper to interact `TlsClientConnection` API
+                match TlsClientConnection::new(
+                    self.stream().as_ref(),
+                    self.server_identity.as_ref(),
+                ) {
+                    Ok(tls_client_connection) => Ok(tls_client_connection),
+                    Err(reason) => Err(Error::TlsClientConnection(reason)),
+                }
+            }
+        }
+    }
+
+    pub fn rehandshake(&self) -> Result<(), Error> {
+        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
+            Ok(()) => Ok(()),
+            Err(reason) => Err(Error::Rehandshake(reason)),
         }
     }
 }
