@@ -27,6 +27,12 @@ pub struct Client {
     pub socket: SocketClient,
 }
 
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Client {
     // Constructors
 

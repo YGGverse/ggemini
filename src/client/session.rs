@@ -7,6 +7,12 @@ pub struct Session {
     index: RefCell<HashMap<String, Rc<Connection>>>,
 }
 
+impl Default for Session {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Session {
     pub fn new() -> Self {
         Self {
