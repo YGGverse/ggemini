@@ -80,6 +80,7 @@ impl Client {
 
         // Update previous session available for this request
         match self.update_session(&uri, certificate.as_ref()) {
+            // Begin new connection
             Ok(()) => match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
                 Ok(network_address) => self.socket.connect_async(
                     &network_address.clone(),
@@ -101,7 +102,7 @@ impl Client {
                                         // Wrap connection to shared reference clone semantics
                                         let connection = Rc::new(connection);
 
-                                        // Update session record
+                                        // Update session
                                         session.update(uri.to_string(), connection.clone());
 
                                         // Begin new request
@@ -140,16 +141,31 @@ impl Client {
     ) -> Result<(), Error> {
         if let Some(connection) = self.session.get(&uri.to_string()) {
             // Check connection contain TLS authorization
-            if let Some(ref tls_client_connection) = connection.tls_client_connection {
-                if let Some(new) = certificate {
-                    // Get previous certificate
-                    if let Some(ref old) = tls_client_connection.certificate() {
-                        if !new.is_same(old) {
-                            // Prevent session resumption
-                            // Glib backend restore session in runtime with old certificate
-                            // @TODO keep in mind, until better solution found for TLS 1.3
-                            println!("{:?}", tls_client_connection.handshake(Cancellable::NONE));
+            match connection.tls_client_connection {
+                Some(ref tls_client_connection) => {
+                    match certificate {
+                        Some(new) => {
+                            // Get previous certificate
+                            if let Some(ref old) = tls_client_connection.certificate() {
+                                // User -> User
+                                if !new.is_same(old) {
+                                    // Prevent session resumption
+                                    // Glib backend restore session in runtime with old certificate
+                                    // @TODO keep in mind, until better solution found for TLS 1.3
+                                    println!("{:?}", connection.rehandshake());
+                                }
+                            }
                         }
+                        None => {
+                            // User -> Guest
+                            println!("{:?}", connection.rehandshake());
+                        }
+                    }
+                }
+                None => {
+                    // Guest -> User
+                    if certificate.is_some() {
+                        println!("{:?}", connection.rehandshake());
                     }
                 }
             }
