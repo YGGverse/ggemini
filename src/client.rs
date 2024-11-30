@@ -91,7 +91,7 @@ impl Client {
         // * guest sessions will not work without!
         self.socket.set_tls(certificate.is_none());
 
-        // Update previous session if available for this `uri`, does force rehandshake on certificate change
+        // Update previous session if available for this `uri`, does force rehandshake on `certificate` change
         match self.session.update(&uri, certificate.as_ref()) {
             // Begin new connection
             // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
