@@ -125,14 +125,8 @@ impl Client {
                                         request_async(
                                             connection,
                                             uri.to_string(),
-                                            match priority {
-                                                Some(priority) => Some(priority),
-                                                None => Some(Priority::DEFAULT),
-                                            },
-                                            match cancellable {
-                                                Some(ref cancellable) => Some(cancellable.clone()),
-                                                None => None::<Cancellable>,
-                                            },
+                                            priority,
+                                            cancellable,
                                             callback, // result
                                         )
                                     }
