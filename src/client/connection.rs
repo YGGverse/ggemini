@@ -51,23 +51,11 @@ impl Connection {
     // Actions
 
     /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    /// and [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) if active
     pub fn close(&self) -> Result<(), Error> {
-        /* Do not close `TlsClientConnection` as wanted for re-handshake
-           on user certificate change in runtime! @TODO
-        if let Some(ref tls_client_connection) = self.tls_client_connection {
-            if !tls_client_connection.is_closed() {
-                if let Err(e) = tls_client_connection.close(self.cancellable.as_ref()) {
-                    return Err(Error::TlsClientConnection(e));
-                }
-            }
-        } */
-        if !self.socket_connection.is_closed() {
-            if let Err(e) = self.socket_connection.close(self.cancellable.as_ref()) {
-                return Err(Error::SocketConnection(e));
-            }
+        match self.socket_connection.close(self.cancellable.as_ref()) {
+            Ok(()) => Ok(()),
+            Err(e) => Err(Error::SocketConnection(e)),
         }
-        Ok(())
     }
 
     /// Request force handshake for `Self`
