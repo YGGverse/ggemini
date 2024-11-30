@@ -73,7 +73,7 @@ impl Session {
                 }
             }
         }
-        Ok(())
+        Ok(()) // @TODO result does nothing yet
     }
 }
 
