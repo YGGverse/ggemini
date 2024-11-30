@@ -123,7 +123,7 @@ impl Client {
                                                 Some(ref cancellable) => Some(cancellable.clone()),
                                                 None => None::<Cancellable>,
                                             },
-                                            move |result| callback(result),
+                                            callback,
                                         )
                                     }
                                     Err(reason) => callback(Err(Error::Connection(reason))),
