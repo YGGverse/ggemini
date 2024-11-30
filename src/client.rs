@@ -23,7 +23,7 @@ pub const DEFAULT_TIMEOUT: u32 = 10;
 
 /// Main point where connect external crate
 ///
-/// Includes high-level API for session-safe interaction with
+/// Provides high-level API for session-safe interaction with
 /// [Gemini protocol](https://geminiprotocol.net) socket server
 pub struct Client {
     session: Rc<Session>,
