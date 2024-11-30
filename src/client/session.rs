@@ -68,7 +68,12 @@ impl Session {
                 }
             }
 
-            // Close connection if active yet
+            // Cancel previous session operations
+            if let Err(e) = connection.cancel() {
+                return Err(Error::Connection(e));
+            }
+
+            // Close previous session connection
             if let Err(e) = connection.close() {
                 return Err(Error::Connection(e));
             }
