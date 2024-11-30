@@ -68,8 +68,12 @@ impl Client {
     // Actions
 
     /// Make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
-    /// callback with new `Response`on success or `Error` on failure.
-    /// * call this method ignore default session resumption by Glib TLS backend,
+    /// callback with new `Response`on success or `Error` on failure
+    ///
+    /// * method does not close new `Connection` created, hold it in `Session`,
+    ///   expects from user manual `Response` handle with close act on complete
+    ///   * if new request match same `uri`, method auto-close previous connection, renew `Session`
+    /// * method ignores default session resumption provided by Glib TLS backend,
     ///   implement certificate change ability in application runtime
     pub fn request_async(
         &self,
