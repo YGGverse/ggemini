@@ -6,7 +6,7 @@ use gio::{
     prelude::{TlsCertificateExt, TlsConnectionExt},
     TlsCertificate,
 };
-use glib::Uri;
+use glib::{Uri, UriHideFlags};
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 /// Request sessions holder
@@ -28,10 +28,6 @@ impl Session {
         }
     }
 
-    pub fn get(&self, request: &str) -> Option<Rc<Connection>> {
-        self.index.borrow().get(request).cloned()
-    }
-
     pub fn set(&self, request: String, connection: Rc<Connection>) -> Option<Rc<Connection>> {
         self.index.borrow_mut().insert(request, connection)
     }
@@ -41,41 +37,38 @@ impl Session {
     /// * force rehandshake on user certificate was changed in runtime (ignore default session resumption by Glib TLS backend implementation)
     /// * close previous connection match `Uri` if not closed yet
     pub fn update(&self, uri: &Uri, certificate: Option<&TlsCertificate>) -> Result<(), Error> {
-        if let Some(connection) = self.get(&uri.to_string()) {
-            match connection.tls_client_connection {
-                // User certificate session
-                Some(ref tls_client_connection) => {
-                    match certificate {
-                        Some(new) => {
-                            // Get previous certificate
-                            if let Some(ref old) = tls_client_connection.certificate() {
-                                // User -> User
-                                if !new.is_same(old) {
-                                    rehandshake(connection.as_ref());
+        // Get available client connections match `uri` scope
+        // https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
+        for (request, connection) in self.index.borrow().iter() {
+            if request.starts_with(
+                uri.to_string_partial(UriHideFlags::QUERY | UriHideFlags::FRAGMENT)
+                    .as_str(),
+            ) {
+                match connection.tls_client_connection {
+                    // User certificate session
+                    Some(ref tls_client_connection) => {
+                        match certificate {
+                            Some(new) => {
+                                // Get previous certificate
+                                if let Some(ref old) = tls_client_connection.certificate() {
+                                    // User -> User
+                                    if !new.is_same(old) {
+                                        rehandshake(connection.as_ref());
+                                    }
                                 }
                             }
+                            // User -> Guest
+                            None => rehandshake(connection.as_ref()),
                         }
-                        // User -> Guest
-                        None => rehandshake(connection.as_ref()),
+                    }
+                    // Guest
+                    None => {
+                        // Guest -> User
+                        if certificate.is_some() {
+                            rehandshake(connection.as_ref())
+                        }
                     }
                 }
-                // Guest
-                None => {
-                    // Guest -> User
-                    if certificate.is_some() {
-                        rehandshake(connection.as_ref())
-                    }
-                }
-            }
-
-            // Cancel previous session operations
-            if let Err(e) = connection.cancel() {
-                return Err(Error::Connection(e));
-            }
-
-            // Close previous session connection
-            if let Err(e) = connection.close() {
-                return Err(Error::Connection(e));
             }
         }
         Ok(())
