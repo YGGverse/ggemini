@@ -61,6 +61,7 @@ impl Connection {
             }
         }
         if !self.socket_connection.is_closed() {
+            // @TODO duplicated condition?
             if let Err(e) = self.socket_connection.close(self.cancellable.as_ref()) {
                 return Err(Error::SocketConnection(e));
             }
