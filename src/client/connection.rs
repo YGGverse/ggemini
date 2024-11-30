@@ -23,7 +23,7 @@ impl Connection {
         server_identity: Option<NetworkAddress>,
     ) -> Result<Self, Error> {
         if socket_connection.is_closed() {
-            return Err(Error::SocketConnectionClosed);
+            return Err(Error::Closed);
         }
 
         Ok(Self {
@@ -118,7 +118,7 @@ pub fn new_tls_client_connection(
     server_identity: Option<&NetworkAddress>,
 ) -> Result<TlsClientConnection, Error> {
     if socket_connection.is_closed() {
-        return Err(Error::SocketConnectionClosed);
+        return Err(Error::Closed);
     }
 
     // https://geminiprotocol.net/docs/protocol-specification.gmi#the-use-of-tls
