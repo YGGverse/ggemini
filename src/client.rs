@@ -74,12 +74,12 @@ impl Client {
     /// High-level method make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
     /// callback with new `Response`on success or `Error` on failure
     ///
+    /// * implement `certificate` comparison with previously defined for this `uri`, force rehandshake if does not match
     /// * method does not close new `Connection` by default, hold it in `Session`,
     ///   expect from user manual `Response` handle with close act on complete
     /// * ignores default session resumption provided by Glib TLS backend,
     ///   instead, applies new `certificate` to available sessions match
     ///   `uri` [scope](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60)
-    /// * implement certificate change ability in application runtime
     pub fn request_async(
         &self,
         uri: Uri,
