@@ -65,6 +65,16 @@ impl Connection {
         Ok(())
     }
 
+    /// Request force handshake for `Self` connection
+    /// * useful for certificate change in runtime
+    pub fn rehandshake(&self) -> Result<(), Error> {
+        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
+            // @TODO shared `Cancellable`
+            Ok(()) => Ok(()),
+            Err(e) => Err(Error::Rehandshake(e)),
+        }
+    }
+
     // Getters
 
     /// Upcast [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
@@ -78,6 +88,8 @@ impl Connection {
         }
     }
 
+    /// Get [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) for `Self`
+    /// * compatible with user and guest sessions
     pub fn tls_client_connection(&self) -> Result<TlsClientConnection, Error> {
         match self.tls_client_connection.clone() {
             // User session
@@ -93,13 +105,6 @@ impl Connection {
                     Err(e) => Err(Error::TlsClientConnection(e)),
                 }
             }
-        }
-    }
-
-    pub fn rehandshake(&self) -> Result<(), Error> {
-        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(Error::Rehandshake(e)),
         }
     }
 }
