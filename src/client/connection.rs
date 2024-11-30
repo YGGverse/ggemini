@@ -96,7 +96,7 @@ impl Connection {
     }
 
     /// Get [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) for `Self`
-    /// * compatible with user and guest sessions
+    /// * compatible with both user and guest connection types
     pub fn tls_client_connection(&self) -> Result<TlsClientConnection, Error> {
         match self.tls_client_connection.clone() {
             // User session
