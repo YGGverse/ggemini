@@ -8,9 +8,10 @@ use gio::{
 use glib::object::{Cast, IsA};
 
 pub struct Connection {
+    pub cancellable: Option<Cancellable>,
+    pub server_identity: Option<NetworkAddress>,
     pub socket_connection: SocketConnection,
     pub tls_client_connection: Option<TlsClientConnection>,
-    pub server_identity: Option<NetworkAddress>,
 }
 
 impl Connection {
@@ -21,12 +22,14 @@ impl Connection {
         socket_connection: SocketConnection,
         certificate: Option<TlsCertificate>,
         server_identity: Option<NetworkAddress>,
+        cancellable: Option<Cancellable>,
     ) -> Result<Self, Error> {
         if socket_connection.is_closed() {
             return Err(Error::Closed);
         }
 
         Ok(Self {
+            cancellable,
             server_identity: server_identity.clone(),
             socket_connection: socket_connection.clone(),
             tls_client_connection: match certificate {
@@ -49,16 +52,16 @@ impl Connection {
 
     /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// and [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) if active
-    pub fn close(&self, cancellable: Option<&Cancellable>) -> Result<(), Error> {
+    pub fn close(&self) -> Result<(), Error> {
         if let Some(ref tls_client_connection) = self.tls_client_connection {
             if !tls_client_connection.is_closed() {
-                if let Err(e) = tls_client_connection.close(cancellable) {
+                if let Err(e) = tls_client_connection.close(self.cancellable.as_ref()) {
                     return Err(Error::TlsClientConnection(e));
                 }
             }
         }
         if !self.socket_connection.is_closed() {
-            if let Err(e) = self.socket_connection.close(cancellable) {
+            if let Err(e) = self.socket_connection.close(self.cancellable.as_ref()) {
                 return Err(Error::SocketConnection(e));
             }
         }
@@ -69,8 +72,10 @@ impl Connection {
     /// * useful for certificate change in runtime
     /// * support guest and user sessions
     pub fn rehandshake(&self) -> Result<(), Error> {
-        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
-            // @TODO shared `Cancellable`
+        match self
+            .tls_client_connection()?
+            .handshake(self.cancellable.as_ref())
+        {
             Ok(()) => Ok(()),
             Err(e) => Err(Error::Rehandshake(e)),
         }

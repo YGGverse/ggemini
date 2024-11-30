@@ -113,6 +113,7 @@ impl Client {
                                     connection,
                                     certificate,
                                     Some(network_address),
+                                    cancellable.clone(),
                                 ) {
                                     Ok(connection) => {
                                         // Wrap to shared reference support clone semantics

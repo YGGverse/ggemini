@@ -4,7 +4,7 @@ pub use error::Error;
 use super::Connection;
 use gio::{
     prelude::{TlsCertificateExt, TlsConnectionExt},
-    Cancellable, TlsCertificate,
+    TlsCertificate,
 };
 use glib::Uri;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
@@ -69,7 +69,7 @@ impl Session {
             }
 
             // Close connection if active yet
-            if let Err(e) = connection.close(Cancellable::NONE) {
+            if let Err(e) = connection.close() {
                 return Err(Error::Connection(e));
             }
         }
