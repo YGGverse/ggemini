@@ -2,7 +2,7 @@ pub mod error;
 pub use error::Error;
 
 use gio::{
-    prelude::{IOStreamExt, TlsConnectionExt},
+    prelude::{CancellableExt, IOStreamExt, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::object::{Cast, IsA};
@@ -49,6 +49,15 @@ impl Connection {
     }
 
     // Actions
+
+    /// Apply `cancel` action to `Self` [Cancellable](https://docs.gtk.org/gio/method.Cancellable.cancel.html)
+    /// * return `Error` on `Cancellable` not found
+    pub fn cancel(&self) -> Result<(), Error> {
+        match self.cancellable {
+            Some(ref cancellable) => Ok(cancellable.cancel()),
+            None => Err(Error::Cancel),
+        }
+    }
 
     /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     pub fn close(&self) -> Result<(), Error> {
