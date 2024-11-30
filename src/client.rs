@@ -129,7 +129,7 @@ impl Client {
                                                 Some(ref cancellable) => Some(cancellable.clone()),
                                                 None => None::<Cancellable>,
                                             },
-                                            callback, // callback with response
+                                            callback, // result
                                         )
                                     }
                                     Err(e) => callback(Err(Error::Connection(e))),
