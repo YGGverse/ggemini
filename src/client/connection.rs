@@ -71,14 +71,11 @@ impl Connection {
         }
     }
 
-    /// Request force handshake for `Self`
+    /// Force non-cancellable handshake request for `Self`
     /// * useful for certificate change in runtime
     /// * support guest and user sessions
     pub fn rehandshake(&self) -> Result<(), Error> {
-        match self
-            .tls_client_connection()?
-            .handshake(self.cancellable.as_ref())
-        {
+        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
             Ok(()) => Ok(()),
             Err(e) => Err(Error::Rehandshake(e)),
         }
