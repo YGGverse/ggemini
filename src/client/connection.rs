@@ -60,10 +60,14 @@ impl Connection {
     }
 
     /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    pub fn close(&self) -> Result<(), Error> {
-        match self.socket_connection.close(self.cancellable.as_ref()) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(Error::SocketConnection(e)),
+    /// * return `Ok(false)` if `Cancellable` not defined
+    pub fn close(&self) -> Result<bool, Error> {
+        match self.cancellable {
+            Some(ref cancellable) => match self.socket_connection.close(Some(cancellable)) {
+                Ok(()) => Ok(true),
+                Err(e) => Err(Error::SocketConnection(e)),
+            },
+            None => Ok(false),
         }
     }
 
