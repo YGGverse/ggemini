@@ -32,10 +32,11 @@ impl Session {
         self.index.borrow_mut().insert(request, connection)
     }
 
-    /// Update existing session for given [Uri](https://docs.gtk.org/glib/struct.Uri.html)
+    /// Update existing session match [scope](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60)
+    /// for given [Uri](https://docs.gtk.org/glib/struct.Uri.html)
     /// and [TlsCertificate](https://docs.gtk.org/gio/class.TlsCertificate.html)
-    /// * force rehandshake on user certificate was changed in runtime (ignore default session resumption by Glib TLS backend implementation)
-    /// * close previous connection match `Uri` if not closed yet
+    ///
+    /// * force rehandshake on user certificate change in runtime (ignore default session resumption by Glib TLS backend)
     pub fn update(&self, uri: &Uri, certificate: Option<&TlsCertificate>) -> Result<(), Error> {
         // Get available client connections match `uri` scope
         // https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
@@ -44,6 +45,7 @@ impl Session {
                 uri.to_string_partial(UriHideFlags::QUERY | UriHideFlags::FRAGMENT)
                     .as_str(),
             ) {
+                // Begin re-handshake on user certificate change
                 match connection.tls_client_connection {
                     // User certificate session
                     Some(ref tls_client_connection) => {
