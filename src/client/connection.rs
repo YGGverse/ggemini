@@ -103,7 +103,7 @@ impl Connection {
             Some(tls_client_connection) => Ok(tls_client_connection),
             // Guest session
             None => {
-                // Create new wrapper for `IOStream` to interact it `TlsClientConnection` API
+                // Create new wrapper for `IOStream` to interact `TlsClientConnection` API
                 match TlsClientConnection::new(
                     self.stream().as_ref(),
                     self.server_identity.as_ref(),
