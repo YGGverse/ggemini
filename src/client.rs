@@ -6,8 +6,6 @@ pub mod error;
 pub mod response;
 pub mod session;
 
-use std::rc::Rc;
-
 pub use connection::Connection;
 pub use error::Error;
 pub use response::Response;
@@ -19,6 +17,7 @@ use gio::{
     TlsClientConnection,
 };
 use glib::{object::Cast, Bytes, Priority, Uri};
+use std::rc::Rc;
 
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
