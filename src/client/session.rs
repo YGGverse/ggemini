@@ -78,7 +78,7 @@ impl Session {
                 return Err(Error::Connection(e));
             }
 
-            // Close previous session connection
+            // Close previous session connections
             if let Err(e) = connection.close() {
                 return Err(Error::Connection(e));
             }
