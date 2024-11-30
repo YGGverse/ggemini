@@ -83,7 +83,7 @@ impl Session {
                 return Err(Error::Connection(e));
             }
         }
-        Ok(()) // @TODO result does nothing yet
+        Ok(())
     }
 }
 
