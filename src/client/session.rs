@@ -72,6 +72,16 @@ impl Session {
                     }
                 }
             }
+
+            // Cancel previous session operations
+            if let Err(e) = connection.cancel() {
+                return Err(Error::Connection(e));
+            }
+
+            // Close previous session connection
+            if let Err(e) = connection.close() {
+                return Err(Error::Connection(e));
+            }
         }
         Ok(()) // @TODO result does nothing yet
     }
