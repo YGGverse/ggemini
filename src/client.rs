@@ -76,7 +76,7 @@ impl Client {
     ///
     /// * method does not close new `Connection` by default, hold it in `Session`,
     ///   expect from user manual `Response` handle with close act on complete
-    /// * ignore default session resumption provided by Glib TLS backend,
+    /// * ignores default session resumption provided by Glib TLS backend,
     ///   instead of that, applies new `certificate` to sessions match `uri` scope
     /// * implement certificate change ability in application runtime
     pub fn request_async(
