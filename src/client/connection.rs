@@ -69,7 +69,7 @@ impl Connection {
         Ok(())
     }
 
-    /// Request force handshake for `Self` connection
+    /// Request force handshake for `Self`
     /// * useful for certificate change in runtime
     /// * support guest and user sessions
     pub fn rehandshake(&self) -> Result<(), Error> {
