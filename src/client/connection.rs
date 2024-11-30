@@ -37,7 +37,7 @@ impl Connection {
                         server_identity.as_ref(),
                     ) {
                         Ok(tls_client_connection) => Some(tls_client_connection),
-                        Err(reason) => return Err(reason),
+                        Err(e) => return Err(e),
                     }
                 }
                 None => None,
@@ -52,14 +52,14 @@ impl Connection {
     pub fn close(&self, cancellable: Option<&Cancellable>) -> Result<(), Error> {
         if let Some(ref tls_client_connection) = self.tls_client_connection {
             if !tls_client_connection.is_closed() {
-                if let Err(reason) = tls_client_connection.close(cancellable) {
-                    return Err(Error::TlsClientConnection(reason));
+                if let Err(e) = tls_client_connection.close(cancellable) {
+                    return Err(Error::TlsClientConnection(e));
                 }
             }
         }
         if !self.socket_connection.is_closed() {
-            if let Err(reason) = self.socket_connection.close(cancellable) {
-                return Err(Error::SocketConnection(reason));
+            if let Err(e) = self.socket_connection.close(cancellable) {
+                return Err(Error::SocketConnection(e));
             }
         }
         Ok(())
@@ -90,7 +90,7 @@ impl Connection {
                     self.server_identity.as_ref(),
                 ) {
                     Ok(tls_client_connection) => Ok(tls_client_connection),
-                    Err(reason) => Err(Error::TlsClientConnection(reason)),
+                    Err(e) => Err(Error::TlsClientConnection(e)),
                 }
             }
         }
@@ -99,7 +99,7 @@ impl Connection {
     pub fn rehandshake(&self) -> Result<(), Error> {
         match self.tls_client_connection()?.handshake(Cancellable::NONE) {
             Ok(()) => Ok(()),
-            Err(reason) => Err(Error::Rehandshake(reason)),
+            Err(e) => Err(Error::Rehandshake(e)),
         }
     }
 }
@@ -131,6 +131,6 @@ pub fn new_tls_client_connection(
 
             Ok(tls_client_connection)
         }
-        Err(reason) => Err(Error::TlsClientConnection(reason)),
+        Err(e) => Err(Error::TlsClientConnection(e)),
     }
 }

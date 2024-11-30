@@ -29,7 +29,7 @@ impl Response {
         Meta::from_stream_async(connection.stream(), priority, cancellable, |result| {
             callback(match result {
                 Ok(meta) => Ok(Self { connection, meta }),
-                Err(reason) => Err(Error::Meta(reason)),
+                Err(e) => Err(Error::Meta(e)),
             })
         })
     }

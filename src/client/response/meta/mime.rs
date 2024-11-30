@@ -47,7 +47,7 @@ impl Mime {
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(value) => match GString::from_utf8(value.into()) {
                 Ok(string) => Self::from_string(string.as_str()),
-                Err(reason) => Err(Error::Decode(reason)),
+                Err(e) => Err(Error::Decode(e)),
             },
             None => Err(Error::Protocol),
         }

@@ -45,24 +45,24 @@ impl Meta {
                 // Parse data
                 let data = Data::from_utf8(slice);
 
-                if let Err(reason) = data {
-                    return Err(Error::Data(reason));
+                if let Err(e) = data {
+                    return Err(Error::Data(e));
                 }
 
                 // MIME
 
                 let mime = Mime::from_utf8(slice);
 
-                if let Err(reason) = mime {
-                    return Err(Error::Mime(reason));
+                if let Err(e) = mime {
+                    return Err(Error::Mime(e));
                 }
 
                 // Status
 
                 let status = Status::from_utf8(slice);
 
-                if let Err(reason) = status {
-                    return Err(Error::Status(reason));
+                if let Err(e) = status {
+                    return Err(Error::Status(e));
                 }
 
                 Ok(Self {
@@ -95,7 +95,7 @@ impl Meta {
             },
             |result| match result {
                 Ok(buffer) => on_complete(Self::from_utf8(&buffer)),
-                Err(reason) => on_complete(Err(reason)),
+                Err(e) => on_complete(Err(e)),
             },
         );
     }
@@ -147,7 +147,7 @@ pub fn read_from_stream_async(
                 // Continue
                 read_from_stream_async(buffer, stream, cancellable, priority, on_complete);
             }
-            Err((data, reason)) => on_complete(Err(Error::InputStream(data, reason))),
+            Err((data, e)) => on_complete(Err(Error::InputStream(data, e))),
         },
     );
 }

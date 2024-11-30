@@ -13,11 +13,11 @@ impl Display for Error {
             Self::BufferOverflow => {
                 write!(f, "Buffer overflow")
             }
-            Self::Decode(reason) => {
-                write!(f, "Decode error: {reason}")
+            Self::Decode(e) => {
+                write!(f, "Decode error: {e}")
             }
-            Self::InputStream(reason) => {
-                write!(f, "Input stream read error: {reason}")
+            Self::InputStream(e) => {
+                write!(f, "Input stream read error: {e}")
             }
         }
     }

@@ -12,8 +12,8 @@ impl Display for Error {
             Self::BytesTotal(total, limit) => {
                 write!(f, "Bytes total limit reached: {total} / {limit}")
             }
-            Self::InputStream(reason) => {
-                write!(f, "Input stream error: {reason}")
+            Self::InputStream(e) => {
+                write!(f, "Input stream error: {e}")
             }
         }
     }

@@ -44,7 +44,7 @@ impl Text {
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match GString::from_utf8(buffer.into()) {
             Ok(data) => Ok(Self::from_string(&data)),
-            Err(reason) => Err(Error::Decode(reason)),
+            Err(e) => Err(Error::Decode(e)),
         }
     }
 
@@ -68,7 +68,7 @@ impl Text {
             },
             |result| match result {
                 Ok(buffer) => on_complete(Self::from_utf8(&buffer)),
-                Err(reason) => on_complete(Err(reason)),
+                Err(e) => on_complete(Err(e)),
             },
         );
     }
@@ -111,7 +111,7 @@ pub fn read_all_from_stream_async(
                 // Continue bytes reading
                 read_all_from_stream_async(buffer, stream, cancelable, priority, callback);
             }
-            Err(reason) => callback(Err(Error::InputStream(reason))),
+            Err(e) => callback(Err(Error::InputStream(e))),
         },
     );
 }

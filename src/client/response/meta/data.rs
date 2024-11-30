@@ -52,7 +52,7 @@ impl Data {
                         false => Some(Self { value }),
                         true => None,
                     }),
-                    Err(reason) => Err(Error::Decode(reason)),
+                    Err(e) => Err(Error::Decode(e)),
                 }
             }
             None => Err(Error::Protocol),

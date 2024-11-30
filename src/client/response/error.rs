@@ -9,8 +9,8 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            Self::Meta(reason) => {
-                write!(f, "Meta read error: {reason}")
+            Self::Meta(e) => {
+                write!(f, "Meta read error: {e}")
             }
             Self::Stream => {
                 write!(f, "I/O stream error")

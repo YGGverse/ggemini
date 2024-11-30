@@ -84,8 +84,8 @@ pub fn read_all_from_stream_async(
                     (on_chunk, on_complete),
                 );
             }
-            Err(reason) => {
-                on_complete(Err(Error::InputStream(reason)));
+            Err(e) => {
+                on_complete(Err(Error::InputStream(e)));
             }
         },
     );

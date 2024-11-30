@@ -12,21 +12,21 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            Self::Data(reason) => {
-                write!(f, "Data error: {reason}")
+            Self::Data(e) => {
+                write!(f, "Data error: {e}")
             }
-            Self::InputStream(_, reason) => {
+            Self::InputStream(_, e) => {
                 // @TODO
-                write!(f, "Input stream error: {reason}")
+                write!(f, "Input stream error: {e}")
             }
-            Self::Mime(reason) => {
-                write!(f, "MIME error: {reason}")
+            Self::Mime(e) => {
+                write!(f, "MIME error: {e}")
             }
             Self::Protocol => {
                 write!(f, "Protocol error")
             }
-            Self::Status(reason) => {
-                write!(f, "Status error: {reason}")
+            Self::Status(e) => {
+                write!(f, "Status error: {e}")
             }
         }
     }

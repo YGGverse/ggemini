@@ -10,8 +10,8 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            Self::Decode(reason) => {
-                write!(f, "Decode error: {reason}")
+            Self::Decode(e) => {
+                write!(f, "Decode error: {e}")
             }
             Self::Protocol => {
                 write!(f, "Protocol error")

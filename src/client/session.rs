@@ -69,8 +69,8 @@ impl Session {
             }
 
             // Close connection if active yet
-            if let Err(reason) = connection.close(Cancellable::NONE) {
-                return Err(Error::Connection(reason));
+            if let Err(e) = connection.close(Cancellable::NONE) {
+                return Err(Error::Connection(e));
             }
         }
         Ok(())
