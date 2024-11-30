@@ -67,6 +67,7 @@ impl Connection {
 
     /// Request force handshake for `Self` connection
     /// * useful for certificate change in runtime
+    /// * support guest and user sessions
     pub fn rehandshake(&self) -> Result<(), Error> {
         match self.tls_client_connection()?.handshake(Cancellable::NONE) {
             // @TODO shared `Cancellable`
