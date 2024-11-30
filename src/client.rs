@@ -150,7 +150,7 @@ impl Client {
     }
 }
 
-/// Make new request for constructed `Connection`
+/// Middle-level method to make new request to `Connection`
 /// * callback with new `Response`on success or `Error` on failure
 pub fn request_async(
     connection: Rc<Connection>,
