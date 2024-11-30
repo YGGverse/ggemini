@@ -38,14 +38,14 @@ impl Session {
     ///
     /// * force rehandshake on user certificate change in runtime (ignore default session resumption by Glib TLS backend)
     pub fn update(&self, uri: &Uri, certificate: Option<&TlsCertificate>) -> Result<(), Error> {
-        // Get available client connections match `uri` scope
+        // Get cached `Client` connections match `uri` scope
         // https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
         for (request, connection) in self.index.borrow().iter() {
             if request.starts_with(
                 uri.to_string_partial(UriHideFlags::QUERY | UriHideFlags::FRAGMENT)
                     .as_str(),
             ) {
-                // Begin re-handshake on user certificate change
+                // Begin re-handshake on `certificate` change
                 match connection.tls_client_connection {
                     // User certificate session
                     Some(ref tls_client_connection) => {
