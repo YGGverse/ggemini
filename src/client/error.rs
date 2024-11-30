@@ -9,6 +9,7 @@ pub enum Error {
     OutputStream(glib::Error),
     Request(glib::Error),
     Response(crate::client::response::Error),
+    Session(crate::client::session::Error),
 }
 
 impl Display for Error {
@@ -17,23 +18,26 @@ impl Display for Error {
             Self::Connectable(uri) => {
                 write!(f, "Could not create connectable address for {uri}")
             }
-            Self::Connection(reason) => {
-                write!(f, "Connection error: {reason}")
+            Self::Connection(e) => {
+                write!(f, "Connection error: {e}")
             }
-            Self::Connect(reason) => {
-                write!(f, "Connect error: {reason}")
+            Self::Connect(e) => {
+                write!(f, "Connect error: {e}")
             }
-            Self::NetworkAddress(reason) => {
-                write!(f, "Network address error: {reason}")
+            Self::NetworkAddress(e) => {
+                write!(f, "Network address error: {e}")
             }
-            Self::OutputStream(reason) => {
-                write!(f, "Output stream error: {reason}")
+            Self::OutputStream(e) => {
+                write!(f, "Output stream error: {e}")
             }
-            Self::Request(reason) => {
-                write!(f, "Request error: {reason}")
+            Self::Request(e) => {
+                write!(f, "Request error: {e}")
             }
-            Self::Response(reason) => {
-                write!(f, "Response error: {reason}")
+            Self::Response(e) => {
+                write!(f, "Response error: {e}")
+            }
+            Self::Session(e) => {
+                write!(f, "Session error: {e}")
             }
         }
     }

@@ -14,7 +14,7 @@ pub use response::Response;
 pub use session::Session;
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsCertificateExt, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
     Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
     TlsClientConnection,
 };
@@ -84,9 +84,11 @@ impl Client {
         // * guest sessions will not work without!
         self.socket.set_tls(certificate.is_none());
 
-        // Update previous session available for this request
-        match self.update_session(&uri, certificate.as_ref()) {
+        // Update previous session if available for this `uri`, force rehandshake on certificate change
+        match self.session.update(&uri, certificate.as_ref()) {
             // Begin new connection
+            // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
+            //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
             Ok(()) => match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
                 Ok(network_address) => self.socket.connect_async(
                     &network_address.clone(),
@@ -99,17 +101,18 @@ impl Client {
                         let session = self.session.clone();
                         move |result| match result {
                             Ok(connection) => {
+                                // Wrap required connection dependencies into the struct holder
                                 match Connection::new_wrap(
                                     connection,
                                     certificate,
                                     Some(network_address),
                                 ) {
                                     Ok(connection) => {
-                                        // Wrap connection to shared reference clone semantics
+                                        // Wrap to shared reference support clone semantics
                                         let connection = Rc::new(connection);
 
-                                        // Update session
-                                        session.update(uri.to_string(), connection.clone());
+                                        // Renew session
+                                        session.set(uri.to_string(), connection.clone());
 
                                         // Begin new request
                                         request_async(
@@ -123,65 +126,20 @@ impl Client {
                                                 Some(ref cancellable) => Some(cancellable.clone()),
                                                 None => None::<Cancellable>,
                                             },
-                                            callback,
+                                            callback, // callback with response
                                         )
                                     }
-                                    Err(reason) => callback(Err(Error::Connection(reason))),
+                                    Err(e) => callback(Err(Error::Connection(e))),
                                 }
                             }
-                            Err(reason) => callback(Err(Error::Connect(reason))),
+                            Err(e) => callback(Err(Error::Connect(e))),
                         }
                     },
                 ),
-                Err(reason) => callback(Err(Error::NetworkAddress(reason))),
+                Err(e) => callback(Err(Error::NetworkAddress(e))),
             },
-            Err(reason) => callback(Err(reason)),
+            Err(e) => callback(Err(Error::Session(e))),
         }
-    }
-
-    /// Update existing session for given request
-    pub fn update_session(
-        &self,
-        uri: &Uri,
-        certificate: Option<&TlsCertificate>,
-    ) -> Result<(), Error> {
-        if let Some(connection) = self.session.get(&uri.to_string()) {
-            // Check connection contain TLS authorization
-            match connection.tls_client_connection {
-                Some(ref tls_client_connection) => {
-                    match certificate {
-                        Some(new) => {
-                            // Get previous certificate
-                            if let Some(ref old) = tls_client_connection.certificate() {
-                                // User -> User
-                                if !new.is_same(old) {
-                                    // Prevent session resumption
-                                    // Glib backend restore session in runtime with old certificate
-                                    // @TODO keep in mind, until better solution found for TLS 1.3
-                                    println!("{:?}", connection.rehandshake());
-                                }
-                            }
-                        }
-                        None => {
-                            // User -> Guest
-                            println!("{:?}", connection.rehandshake());
-                        }
-                    }
-                }
-                None => {
-                    // Guest -> User
-                    if certificate.is_some() {
-                        println!("{:?}", connection.rehandshake());
-                    }
-                }
-            }
-
-            // Close connection if active yet
-            if let Err(reason) = connection.close(Cancellable::NONE) {
-                return Err(Error::Connection(reason));
-            }
-        }
-        Ok(())
     }
 }
 
@@ -210,11 +168,11 @@ pub fn request_async(
                 Response::from_request_async(connection, priority, cancellable, move |result| {
                     callback(match result {
                         Ok(response) => Ok(response),
-                        Err(reason) => Err(Error::Response(reason)),
+                        Err(e) => Err(Error::Response(e)),
                     })
                 })
             }
-            Err(reason) => callback(Err(Error::OutputStream(reason))),
+            Err(e) => callback(Err(Error::OutputStream(e))),
         },
     );
 }
