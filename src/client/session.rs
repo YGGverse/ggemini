@@ -79,8 +79,8 @@ impl Session {
 
 // Tools
 
-// Applies re-handshake to `Connection` to prevent default session resumption
-// on user certificate change in runtime
+/// Applies re-handshake to `Connection`
+/// to prevent default session resumption on user certificate change in runtime
 pub fn rehandshake(connection: &Connection) {
     if let Err(e) = connection.rehandshake() {
         println!("warning: {e}"); // @TODO keep in mind until solution for TLS 1.3
