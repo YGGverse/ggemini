@@ -79,7 +79,7 @@ impl Session {
 
 // Tools
 
-// Applies re-handshake to connection to prevent default session resumption
+// Applies re-handshake to `Connection` to prevent default session resumption
 // on user certificate change in runtime
 pub fn rehandshake(connection: &Connection) {
     if let Err(e) = connection.rehandshake() {
