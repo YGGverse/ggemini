@@ -36,7 +36,7 @@ impl Connection {
             ) {
                 Ok(tls_client_connection) => {
                     // Prevent session resumption (on certificate change in runtime)
-                    tls_client_connection.set_property("session-resumption-enabled", &false);
+                    tls_client_connection.set_property("session-resumption-enabled", false);
 
                     // Is user session
                     // https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
