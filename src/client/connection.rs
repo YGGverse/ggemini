@@ -1,11 +1,17 @@
 pub mod error;
+pub mod response;
+
 pub use error::Error;
+pub use response::Response;
 
 use gio::{
-    prelude::TlsConnectionExt, IOStream, NetworkAddress, SocketConnection, TlsCertificate,
-    TlsClientConnection,
+    prelude::{IOStreamExt, OutputStreamExt, TlsConnectionExt},
+    Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
-use glib::object::{Cast, IsA, ObjectExt};
+use glib::{
+    object::{Cast, IsA, ObjectExt},
+    Bytes, Priority,
+};
 
 pub struct Connection {
     pub socket_connection: SocketConnection,
@@ -49,6 +55,40 @@ impl Connection {
             },
             socket_connection,
         })
+    }
+
+    // Actions
+
+    /// Make new request to available `Connection`
+    /// * callback with new `Response` on success or `Error` on failure
+    pub fn request_async(
+        self,
+        query: String,
+        priority: Priority,
+        cancellable: Cancellable,
+        callback: impl Fn(Result<Response, Error>) + 'static,
+    ) {
+        self.tls_client_connection
+            .output_stream()
+            .write_bytes_async(
+                &Bytes::from(format!("{query}\r\n").as_bytes()),
+                priority,
+                Some(&cancellable.clone()),
+                move |result| match result {
+                    Ok(_) => Response::from_connection_async(
+                        self,
+                        priority,
+                        cancellable,
+                        move |result| {
+                            callback(match result {
+                                Ok(response) => Ok(response),
+                                Err(e) => Err(Error::Response(e)),
+                            })
+                        },
+                    ),
+                    Err(e) => callback(Err(Error::Stream(e))),
+                },
+            );
     }
 
     // Getters

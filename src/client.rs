@@ -3,18 +3,16 @@
 
 pub mod connection;
 pub mod error;
-pub mod response;
 
 pub use connection::Connection;
 pub use error::Error;
-pub use response::Response;
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
+    prelude::{SocketClientExt, TlsConnectionExt},
     Cancellable, SocketClient, SocketClientEvent, SocketProtocol, TlsCertificate,
     TlsClientConnection,
 };
-use glib::{object::Cast, Bytes, Priority, Uri};
+use glib::{object::Cast, Priority, Uri};
 
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
@@ -74,7 +72,7 @@ impl Client {
         priority: Priority,
         cancellable: Cancellable,
         certificate: Option<TlsCertificate>,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl Fn(Result<connection::Response, Error>) + 'static,
     ) {
         // Toggle socket mode
         // * guest sessions will not work without!
@@ -94,12 +92,14 @@ impl Client {
                         {
                             Ok(connection) => {
                                 // Begin new request
-                                request_async(
-                                    connection,
+                                connection.request_async(
                                     uri.to_string(),
                                     priority,
                                     cancellable,
-                                    callback, // result
+                                    move |result| match result {
+                                        Ok(response) => callback(Ok(response)),
+                                        Err(e) => callback(Err(Error::Connection(e))),
+                                    },
                                 )
                             }
                             Err(e) => callback(Err(Error::Connection(e))),
@@ -111,31 +111,4 @@ impl Client {
             Err(e) => callback(Err(Error::NetworkAddress(e))),
         }
     }
-}
-
-/// Middle-level helper, makes new request to available `Connection`
-/// * callback with new `Response` on success or `Error` on failure
-pub fn request_async(
-    connection: Connection,
-    query: String,
-    priority: Priority,
-    cancellable: Cancellable,
-    callback: impl Fn(Result<Response, Error>) + 'static,
-) {
-    connection.stream().output_stream().write_bytes_async(
-        &Bytes::from(format!("{query}\r\n").as_bytes()),
-        priority,
-        Some(&cancellable.clone()),
-        move |result| match result {
-            Ok(_) => {
-                Response::from_connection_async(connection, priority, cancellable, move |result| {
-                    callback(match result {
-                        Ok(response) => Ok(response),
-                        Err(e) => Err(Error::Response(e)),
-                    })
-                })
-            }
-            Err(e) => callback(Err(Error::OutputStream(e))),
-        },
-    );
 }
