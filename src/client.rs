@@ -92,10 +92,10 @@ impl Client {
                 }
                 .as_ref(),
                 move |result| match result {
-                    Ok(connection) => {
+                    Ok(socket_connection) => {
                         // Wrap required connection dependencies into the struct holder
                         match Connection::new(
-                            connection,
+                            socket_connection,
                             certificate,
                             Some(network_address),
                             cancellable.clone(),
