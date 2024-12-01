@@ -9,7 +9,6 @@ use glib::object::{Cast, IsA, ObjectExt};
 
 pub struct Connection {
     pub cancellable: Option<Cancellable>,
-    pub certificate: Option<TlsCertificate>,
     pub socket_connection: SocketConnection,
     pub tls_client_connection: TlsClientConnection,
 }
@@ -30,7 +29,6 @@ impl Connection {
 
         Ok(Self {
             cancellable,
-            certificate: certificate.clone(),
             socket_connection: socket_connection.clone(),
             tls_client_connection: match TlsClientConnection::new(
                 &socket_connection.clone(),
@@ -91,10 +89,10 @@ impl Connection {
     /// * useful also to keep `Connection` active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
         // * do not replace with `tls_client_connection.base_io_stream()`
-        //   as it will not work for user certificate sessions!
-        match self.certificate {
-            Some(_) => self.tls_client_connection.clone().upcast::<IOStream>(),
-            None => self.socket_connection.clone().upcast::<IOStream>(),
+        //   as it will not work properly for user certificate sessions!
+        match self.tls_client_connection.certificate().is_some() {
+            true => self.tls_client_connection.clone().upcast::<IOStream>(),
+            false => self.socket_connection.clone().upcast::<IOStream>(),
         }
     }
 }
