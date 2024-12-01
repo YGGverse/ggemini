@@ -45,7 +45,7 @@ impl Client {
         socket.set_timeout(DEFAULT_TIMEOUT);
 
         // Connect events
-        socket.connect_event(move |_, event, _, stream| {
+        socket.connect_event(|_, event, _, stream| {
             // This condition have effect only for guest TLS connections
             // * for user certificates validation, use `Connection` impl
             if event == SocketClientEvent::TlsHandshaking {
