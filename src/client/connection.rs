@@ -59,7 +59,7 @@ impl Connection {
 
     // Actions
 
-    /// Make new request to available `Connection`
+    /// Make new request to `Self` connection
     /// * callback with new `Response` on success or `Error` on failure
     pub fn request_async(
         self,
