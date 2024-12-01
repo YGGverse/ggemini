@@ -19,7 +19,9 @@ pub struct Response {
 impl Response {
     // Constructors
 
-    pub fn from_request_async(
+    /// Create new `Self` from given `Connection`
+    /// * useful for manual [IOStream](https://docs.gtk.org/gio/class.IOStream.html) handle (based on `Meta` bytes pre-parsed)
+    pub fn from_connection_async(
         connection: Connection,
         priority: Priority,
         cancellable: Cancellable,

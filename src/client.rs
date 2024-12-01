@@ -113,8 +113,8 @@ impl Client {
     }
 }
 
-/// Middle-level method to make new request to `Connection`
-/// * callback with new `Response`on success or `Error` on failure
+/// Middle-level helper, makes new request to available `Connection`
+/// * callback with new `Response` on success or `Error` on failure
 pub fn request_async(
     connection: Connection,
     query: String,
@@ -128,7 +128,7 @@ pub fn request_async(
         Some(&cancellable.clone()),
         move |result| match result {
             Ok(_) => {
-                Response::from_request_async(connection, priority, cancellable, move |result| {
+                Response::from_connection_async(connection, priority, cancellable, move |result| {
                     callback(match result {
                         Ok(response) => Ok(response),
                         Err(e) => Err(Error::Response(e)),
