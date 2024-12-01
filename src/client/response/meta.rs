@@ -78,21 +78,15 @@ impl Meta {
     /// Asynchronously create new `Self` from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     pub fn from_stream_async(
         stream: impl IsA<IOStream>,
-        priority: Option<Priority>,
-        cancellable: Option<Cancellable>,
+        priority: Priority,
+        cancellable: Cancellable,
         on_complete: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         read_from_stream_async(
             Vec::with_capacity(MAX_LEN),
             stream,
-            match cancellable {
-                Some(value) => Some(value),
-                None => None::<Cancellable>,
-            },
-            match priority {
-                Some(value) => value,
-                None => Priority::DEFAULT,
-            },
+            cancellable,
+            priority,
             |result| match result {
                 Ok(buffer) => on_complete(Self::from_utf8(&buffer)),
                 Err(e) => on_complete(Err(e)),
@@ -110,14 +104,14 @@ impl Meta {
 pub fn read_from_stream_async(
     mut buffer: Vec<u8>,
     stream: impl IsA<IOStream>,
-    cancellable: Option<Cancellable>,
+    cancellable: Cancellable,
     priority: Priority,
     on_complete: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
 ) {
     stream.input_stream().read_async(
         vec![0],
         priority,
-        cancellable.clone().as_ref(),
+        Some(&cancellable.clone()),
         move |result| match result {
             Ok((mut bytes, size)) => {
                 // Expect valid header length

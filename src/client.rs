@@ -71,8 +71,8 @@ impl Client {
     pub fn request_async(
         &self,
         uri: Uri,
-        priority: Option<Priority>,
-        cancellable: Option<Cancellable>,
+        priority: Priority,
+        cancellable: Cancellable,
         certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
@@ -86,20 +86,12 @@ impl Client {
         match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
             Ok(network_address) => self.socket.connect_async(
                 &network_address.clone(),
-                match cancellable {
-                    Some(ref cancellable) => Some(cancellable.clone()),
-                    None => None::<Cancellable>,
-                }
-                .as_ref(),
+                Some(&cancellable.clone()),
                 move |result| match result {
                     Ok(socket_connection) => {
                         // Wrap required connection dependencies into the struct holder
-                        match Connection::new(
-                            socket_connection,
-                            certificate,
-                            Some(network_address),
-                            cancellable.clone(),
-                        ) {
+                        match Connection::new(socket_connection, certificate, Some(network_address))
+                        {
                             Ok(connection) => {
                                 // Begin new request
                                 request_async(
@@ -126,21 +118,14 @@ impl Client {
 pub fn request_async(
     connection: Connection,
     query: String,
-    priority: Option<Priority>,
-    cancellable: Option<Cancellable>,
+    priority: Priority,
+    cancellable: Cancellable,
     callback: impl Fn(Result<Response, Error>) + 'static,
 ) {
     connection.stream().output_stream().write_bytes_async(
         &Bytes::from(format!("{query}\r\n").as_bytes()),
-        match priority {
-            Some(priority) => priority,
-            None => Priority::DEFAULT,
-        },
-        match cancellable {
-            Some(ref cancellable) => Some(cancellable.clone()),
-            None => None::<Cancellable>,
-        }
-        .as_ref(),
+        priority,
+        Some(&cancellable.clone()),
         move |result| match result {
             Ok(_) => {
                 Response::from_request_async(connection, priority, cancellable, move |result| {

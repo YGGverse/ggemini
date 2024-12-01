@@ -21,8 +21,8 @@ impl Response {
 
     pub fn from_request_async(
         connection: Connection,
-        priority: Option<Priority>,
-        cancellable: Option<Cancellable>,
+        priority: Priority,
+        cancellable: Cancellable,
         callback: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         Meta::from_stream_async(connection.stream(), priority, cancellable, |result| {

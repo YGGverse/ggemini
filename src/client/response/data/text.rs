@@ -51,21 +51,15 @@ impl Text {
     /// Asynchronously create new `Self` from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     pub fn from_stream_async(
         stream: impl IsA<IOStream>,
-        priority: Option<Priority>,
-        cancellable: Option<Cancellable>,
+        priority: Priority,
+        cancellable: Cancellable,
         on_complete: impl FnOnce(Result<Self, Error>) + 'static,
     ) {
         read_all_from_stream_async(
             Vec::with_capacity(BUFFER_CAPACITY),
             stream,
-            match cancellable {
-                Some(value) => Some(value),
-                None => None::<Cancellable>,
-            },
-            match priority {
-                Some(value) => value,
-                None => Priority::DEFAULT,
-            },
+            cancellable,
+            priority,
             |result| match result {
                 Ok(buffer) => on_complete(Self::from_utf8(&buffer)),
                 Err(e) => on_complete(Err(e)),
@@ -83,14 +77,14 @@ impl Text {
 pub fn read_all_from_stream_async(
     mut buffer: Vec<u8>,
     stream: impl IsA<IOStream>,
-    cancelable: Option<Cancellable>,
+    cancelable: Cancellable,
     priority: Priority,
     callback: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
 ) {
     stream.input_stream().read_bytes_async(
         BUFFER_CAPACITY,
         priority,
-        cancelable.clone().as_ref(),
+        Some(&cancelable.clone()),
         move |result| match result {
             Ok(bytes) => {
                 // No bytes were read, end of stream

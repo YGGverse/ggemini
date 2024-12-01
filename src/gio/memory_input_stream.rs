@@ -15,7 +15,7 @@ use glib::{object::IsA, Bytes, Priority};
 /// * calculate bytes processed on chunk load
 pub fn from_stream_async(
     base_io_stream: impl IsA<IOStream>,
-    cancelable: Option<Cancellable>,
+    cancelable: Cancellable,
     priority: Priority,
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
@@ -38,7 +38,7 @@ pub fn from_stream_async(
 pub fn read_all_from_stream_async(
     memory_input_stream: MemoryInputStream,
     base_io_stream: impl IsA<IOStream>,
-    cancelable: Option<Cancellable>,
+    cancelable: Cancellable,
     priority: Priority,
     bytes: (usize, usize, usize),
     callback: (
@@ -52,7 +52,7 @@ pub fn read_all_from_stream_async(
     base_io_stream.input_stream().read_bytes_async(
         bytes_in_chunk,
         priority,
-        cancelable.clone().as_ref(),
+        Some(&cancelable.clone()),
         move |result| match result {
             Ok(bytes) => {
                 // Update bytes total

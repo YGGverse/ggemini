@@ -2,13 +2,12 @@ pub mod error;
 pub use error::Error;
 
 use gio::{
-    prelude::{CancellableExt, IOStreamExt, TlsConnectionExt},
-    Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
+    prelude::TlsConnectionExt, IOStream, NetworkAddress, SocketConnection, TlsCertificate,
+    TlsClientConnection,
 };
 use glib::object::{Cast, IsA, ObjectExt};
 
 pub struct Connection {
-    pub cancellable: Option<Cancellable>,
     pub socket_connection: SocketConnection,
     pub tls_client_connection: TlsClientConnection,
 }
@@ -21,17 +20,11 @@ impl Connection {
         socket_connection: SocketConnection,
         certificate: Option<TlsCertificate>,
         server_identity: Option<NetworkAddress>,
-        cancellable: Option<Cancellable>,
     ) -> Result<Self, Error> {
-        if socket_connection.is_closed() {
-            return Err(Error::Closed);
-        }
-
         Ok(Self {
-            cancellable,
             socket_connection: socket_connection.clone(),
             tls_client_connection: match TlsClientConnection::new(
-                &socket_connection.clone(),
+                &socket_connection,
                 server_identity.as_ref(),
             ) {
                 Ok(tls_client_connection) => {
@@ -58,38 +51,12 @@ impl Connection {
         })
     }
 
-    // Actions
-
-    /// Apply `cancel` action to `Self` [Cancellable](https://docs.gtk.org/gio/method.Cancellable.cancel.html)
-    /// * return `Error` on `Cancellable` not found
-    pub fn cancel(&self) -> Result<(), Error> {
-        match self.cancellable {
-            Some(ref cancellable) => {
-                cancellable.cancel();
-                Ok(())
-            }
-            None => Err(Error::Cancel),
-        }
-    }
-
-    /// Close owned [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    /// * return `Ok(false)` if `Cancellable` not defined
-    pub fn close(&self) -> Result<bool, Error> {
-        match self.cancellable {
-            Some(ref cancellable) => match self.socket_connection.close(Some(cancellable)) {
-                Ok(()) => Ok(true),
-                Err(e) => Err(Error::SocketConnection(e)),
-            },
-            None => Ok(false),
-        }
-    }
-
     // Getters
 
     /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
-    /// * compatible with user (certificate) and guest (certificate-less) connection types
+    /// * compatible with user (certificate) and guest (certificate-less) connection type
     /// * useful also to keep `Connection` active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
         // * do not replace with `tls_client_connection.base_io_stream()`
