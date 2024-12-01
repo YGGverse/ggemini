@@ -53,12 +53,14 @@ impl Connection {
         cancellable: Cancellable,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
+        // Send request
         self.stream().output_stream().write_bytes_async(
             &Bytes::from(format!("{query}\r\n").as_bytes()),
             priority,
             Some(&cancellable.clone()),
             move |result| match result {
                 Ok(_) => {
+                    // Read response
                     Response::from_connection_async(self, priority, cancellable, move |result| {
                         callback(match result {
                             Ok(response) => Ok(response),
@@ -86,13 +88,14 @@ impl Connection {
 
 /// Setup new [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html)
 /// wrapper for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+/// using `server_identity` as [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
 pub fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
 ) -> Result<TlsClientConnection, Error> {
     match TlsClientConnection::new(socket_connection, server_identity) {
         Ok(tls_client_connection) => {
-            // Prevent session resumption (on certificate change in runtime)
+            // Prevent session resumption (certificate change ability in runtime)
             tls_client_connection.set_property("session-resumption-enabled", false);
 
             // @TODO handle
