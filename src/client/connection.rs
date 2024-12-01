@@ -64,7 +64,10 @@ impl Connection {
     /// * return `Error` on `Cancellable` not found
     pub fn cancel(&self) -> Result<(), Error> {
         match self.cancellable {
-            Some(ref cancellable) => Ok(cancellable.cancel()),
+            Some(ref cancellable) => {
+                cancellable.cancel();
+                Ok(())
+            }
             None => Err(Error::Cancel),
         }
     }
