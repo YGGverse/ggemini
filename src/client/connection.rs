@@ -25,11 +25,13 @@ impl Connection {
         socket_connection: SocketConnection,
         certificate: Option<TlsCertificate>,
         server_identity: Option<NetworkAddress>,
+        is_session_resumption: bool,
     ) -> Result<Self, Error> {
         Ok(Self {
             tls_client_connection: match new_tls_client_connection(
                 &socket_connection,
                 server_identity.as_ref(),
+                is_session_resumption,
             ) {
                 Ok(tls_client_connection) => {
                     if let Some(ref certificate) = certificate {
@@ -92,11 +94,12 @@ impl Connection {
 pub fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
+    is_session_resumption: bool,
 ) -> Result<TlsClientConnection, Error> {
     match TlsClientConnection::new(socket_connection, server_identity) {
         Ok(tls_client_connection) => {
             // Prevent session resumption (certificate change ability in runtime)
-            tls_client_connection.set_property("session-resumption-enabled", false);
+            tls_client_connection.set_property("session-resumption-enabled", is_session_resumption);
 
             // @TODO handle
             // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections

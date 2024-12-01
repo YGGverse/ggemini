@@ -10,13 +10,17 @@ pub use error::Error;
 use gio::{prelude::SocketClientExt, Cancellable, SocketClient, SocketProtocol, TlsCertificate};
 use glib::{Priority, Uri};
 
+// Defaults
+
 pub const DEFAULT_TIMEOUT: u32 = 10;
+pub const DEFAULT_SESSION_RESUMPTION: bool = false;
 
 /// Main point where connect external crate
 ///
 /// Provides high-level API for session-safe interaction with
 /// [Gemini](https://geminiprotocol.net) socket server
 pub struct Client {
+    is_session_resumption: bool,
     pub socket: SocketClient,
 }
 
@@ -39,7 +43,10 @@ impl Client {
         socket.set_timeout(DEFAULT_TIMEOUT);
 
         // Done
-        Self { socket }
+        Self {
+            is_session_resumption: DEFAULT_SESSION_RESUMPTION,
+            socket,
+        }
     }
 
     // Actions
@@ -60,29 +67,41 @@ impl Client {
         // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
         //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
         match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
-            Ok(network_address) => self.socket.connect_async(
-                &network_address.clone(),
-                Some(&cancellable.clone()),
-                move |result| match result {
-                    Ok(socket_connection) => {
-                        match Connection::new(socket_connection, certificate, Some(network_address))
-                        {
-                            Ok(connection) => connection.request_async(
-                                uri.to_string(),
-                                priority,
-                                cancellable,
-                                move |result| match result {
-                                    Ok(response) => callback(Ok(response)),
+            Ok(network_address) => {
+                self.socket
+                    .connect_async(&network_address.clone(), Some(&cancellable.clone()), {
+                        let is_session_resumption = self.is_session_resumption;
+                        move |result| match result {
+                            Ok(socket_connection) => {
+                                match Connection::new(
+                                    socket_connection,
+                                    certificate,
+                                    Some(network_address),
+                                    is_session_resumption,
+                                ) {
+                                    Ok(connection) => connection.request_async(
+                                        uri.to_string(),
+                                        priority,
+                                        cancellable,
+                                        move |result| match result {
+                                            Ok(response) => callback(Ok(response)),
+                                            Err(e) => callback(Err(Error::Connection(e))),
+                                        },
+                                    ),
                                     Err(e) => callback(Err(Error::Connection(e))),
-                                },
-                            ),
-                            Err(e) => callback(Err(Error::Connection(e))),
+                                }
+                            }
+                            Err(e) => callback(Err(Error::Connect(e))),
                         }
-                    }
-                    Err(e) => callback(Err(Error::Connect(e))),
-                },
-            ),
+                    })
+            }
             Err(e) => callback(Err(Error::NetworkAddress(e))),
         }
+    }
+
+    // Setters
+
+    pub fn set_session_resumption(&mut self, is_enabled: bool) {
+        self.is_session_resumption = is_enabled
     }
 }
