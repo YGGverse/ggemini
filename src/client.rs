@@ -54,7 +54,6 @@ impl Client {
     /// Make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
     /// callback with new `Response`on success or `Error` on failure
     /// * compatible with user (certificate) and guest (certificate-less) connection types
-    /// * disables default `session-resumption-enabled` property to apply certificate change ability in runtime
     pub fn request_async(
         &self,
         uri: Uri,
@@ -101,6 +100,8 @@ impl Client {
 
     // Setters
 
+    /// Change `session-resumption-enabled` property to apply new certificate option in runtime
+    /// * disabled by default
     pub fn set_session_resumption(&mut self, is_enabled: bool) {
         self.is_session_resumption = is_enabled
     }
