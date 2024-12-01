@@ -15,7 +15,7 @@ use glib::{
 
 pub struct Connection {
     pub socket_connection: SocketConnection,
-    pub tls_client_connection: Option<TlsClientConnection>,
+    pub tls_client_connection: Option<TlsClientConnection>, // is user certificate session
 }
 
 impl Connection {
@@ -75,26 +75,30 @@ impl Connection {
 
     // Getters
 
-    /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+    /// Cast [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
     /// * compatible with user (certificate) and guest (certificate-less) connection type
-    /// * useful also to keep `Connection` active in async I/O context
+    /// * useful to keep `Connection` reference active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
-        // * do not replace with `tls_client_connection.base_io_stream()`
-        //   as it will not work properly for user certificate sessions!
         match self.tls_client_connection.is_some() {
+            // is user session
             true => self
                 .tls_client_connection
                 .clone()
                 .unwrap()
-                .upcast::<IOStream>(), // is user session
-            false => self.socket_connection.clone().upcast::<IOStream>(), // is guest session
+                .upcast::<IOStream>(),
+            // is guest session
+            false => self.socket_connection.clone().upcast::<IOStream>(),
         }
     }
 }
 
-fn new_tls_client_connection(
+// Helpers
+
+/// Setup new [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html)
+/// wrapper for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
+pub fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
 ) -> Result<TlsClientConnection, Error> {
@@ -110,6 +114,7 @@ fn new_tls_client_connection(
             // @TODO validate
             // https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation
             tls_client_connection.connect_accept_certificate(|_, _, _| true);
+
             Ok(tls_client_connection)
         }
         Err(e) => Err(Error::TlsClientConnection(e)),
