@@ -100,7 +100,8 @@ impl Client {
 
     // Setters
 
-    /// Change `session-resumption-enabled` property to apply new certificate option in runtime
+    /// Change `session-resumption-enabled` property value to apply new certificate option in runtime
+    /// https://www.gnutls.org/manual/html_node/Session-resumption.html
     /// * disabled by default
     pub fn set_session_resumption(&mut self, is_enabled: bool) {
         self.is_session_resumption = is_enabled
