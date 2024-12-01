@@ -22,7 +22,6 @@ impl Connection {
         server_identity: Option<NetworkAddress>,
     ) -> Result<Self, Error> {
         Ok(Self {
-            socket_connection: socket_connection.clone(),
             tls_client_connection: match TlsClientConnection::new(
                 &socket_connection,
                 server_identity.as_ref(),
@@ -48,6 +47,7 @@ impl Connection {
                 }
                 Err(e) => return Err(Error::TlsClientConnection(e)),
             },
+            socket_connection,
         })
     }
 
