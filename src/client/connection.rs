@@ -43,7 +43,7 @@ impl Connection {
 
                     // @TODO validate
                     // https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation
-                    tls_client_connection.connect_accept_certificate(move |_, _, _| true);
+                    tls_client_connection.connect_accept_certificate(|_, _, _| true);
                     tls_client_connection
                 }
                 Err(e) => return Err(Error::TlsClientConnection(e)),
