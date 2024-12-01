@@ -67,6 +67,8 @@ impl Client {
 
     /// High-level method make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
     /// callback with new `Response`on success or `Error` on failure
+    /// * compatible with user (certificate) and guest (certificate-less) connection types
+    /// * disables default `session-resumption-enabled` property to apply certificate change ability in runtime
     pub fn request_async(
         &self,
         uri: Uri,

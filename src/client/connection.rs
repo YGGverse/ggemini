@@ -86,6 +86,7 @@ impl Connection {
     /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
+    /// * compatible with user (certificate) and guest (certificate-less) connection types
     /// * useful also to keep `Connection` active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
         // * do not replace with `tls_client_connection.base_io_stream()`
