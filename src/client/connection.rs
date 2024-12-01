@@ -14,8 +14,7 @@ use glib::{
 };
 
 pub struct Connection {
-    pub socket_connection: SocketConnection,
-    pub tls_client_connection: Option<TlsClientConnection>, // is user certificate session
+    pub tls_client_connection: TlsClientConnection,
 }
 
 impl Connection {
@@ -28,19 +27,18 @@ impl Connection {
         server_identity: Option<NetworkAddress>,
     ) -> Result<Self, Error> {
         Ok(Self {
-            tls_client_connection: match certificate {
-                Some(ref certificate) => {
-                    match new_tls_client_connection(&socket_connection, server_identity.as_ref()) {
-                        Ok(tls_client_connection) => {
-                            tls_client_connection.set_certificate(certificate);
-                            Some(tls_client_connection)
-                        }
-                        Err(e) => return Err(e),
+            tls_client_connection: match new_tls_client_connection(
+                &socket_connection,
+                server_identity.as_ref(),
+            ) {
+                Ok(tls_client_connection) => {
+                    if let Some(ref certificate) = certificate {
+                        tls_client_connection.set_certificate(certificate);
                     }
+                    tls_client_connection
                 }
-                None => None,
+                Err(e) => return Err(e),
             },
-            socket_connection,
         })
     }
 
@@ -75,22 +73,11 @@ impl Connection {
 
     // Getters
 
-    /// Cast [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
-    /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-    /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
+    /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// * compatible with user (certificate) and guest (certificate-less) connection type
     /// * useful to keep `Connection` reference active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
-        match self.tls_client_connection.is_some() {
-            // is user session
-            true => self
-                .tls_client_connection
-                .clone()
-                .unwrap()
-                .upcast::<IOStream>(),
-            // is guest session
-            false => self.socket_connection.clone().upcast::<IOStream>(),
-        }
+        self.tls_client_connection.clone().upcast::<IOStream>()
     }
 }
 

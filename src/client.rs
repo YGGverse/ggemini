@@ -74,10 +74,6 @@ impl Client {
         certificate: Option<TlsCertificate>,
         callback: impl Fn(Result<connection::Response, Error>) + 'static,
     ) {
-        // Toggle socket mode
-        // * guest sessions will not work without!
-        self.socket.set_tls(certificate.is_none());
-
         // Begin new connection
         // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
         //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
