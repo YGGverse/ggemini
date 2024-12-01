@@ -5,20 +5,20 @@ use gio::{
     prelude::{CancellableExt, IOStreamExt, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
-use glib::object::{Cast, IsA};
+use glib::object::{Cast, IsA, ObjectExt};
 
 pub struct Connection {
     pub cancellable: Option<Cancellable>,
-    pub server_identity: Option<NetworkAddress>,
+    pub certificate: Option<TlsCertificate>,
     pub socket_connection: SocketConnection,
-    pub tls_client_connection: Option<TlsClientConnection>,
+    pub tls_client_connection: TlsClientConnection,
 }
 
 impl Connection {
     // Constructors
 
     /// Create new `Self`
-    pub fn new_wrap(
+    pub fn new(
         socket_connection: SocketConnection,
         certificate: Option<TlsCertificate>,
         server_identity: Option<NetworkAddress>,
@@ -30,20 +30,32 @@ impl Connection {
 
         Ok(Self {
             cancellable,
-            server_identity: server_identity.clone(),
+            certificate: certificate.clone(),
             socket_connection: socket_connection.clone(),
-            tls_client_connection: match certificate {
-                Some(certificate) => {
-                    match new_tls_client_connection(
-                        &socket_connection,
-                        &certificate,
-                        server_identity.as_ref(),
-                    ) {
-                        Ok(tls_client_connection) => Some(tls_client_connection),
-                        Err(e) => return Err(e),
+            tls_client_connection: match TlsClientConnection::new(
+                &socket_connection.clone(),
+                server_identity.as_ref(),
+            ) {
+                Ok(tls_client_connection) => {
+                    // Prevent session resumption (on certificate change in runtime)
+                    tls_client_connection.set_property("session-resumption-enabled", &false);
+
+                    // Is user session
+                    // https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
+                    if let Some(ref certificate) = certificate {
+                        tls_client_connection.set_certificate(certificate);
                     }
+
+                    // @TODO handle
+                    // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections
+                    tls_client_connection.set_require_close_notify(true);
+
+                    // @TODO validate
+                    // https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation
+                    tls_client_connection.connect_accept_certificate(move |_, _, _| true);
+                    tls_client_connection
                 }
-                None => None,
+                Err(e) => return Err(Error::TlsClientConnection(e)),
             },
         })
     }
@@ -71,77 +83,18 @@ impl Connection {
         }
     }
 
-    /// Force non-cancellable handshake request for `Self`
-    /// * useful for certificate change in runtime
-    /// * support guest and user sessions
-    pub fn rehandshake(&self) -> Result<(), Error> {
-        match self.tls_client_connection()?.handshake(Cancellable::NONE) {
-            Ok(()) => Ok(()),
-            Err(e) => Err(Error::Rehandshake(e)),
-        }
-    }
-
     // Getters
 
-    /// Upcast [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+    /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
     /// or [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) (if available)
-    /// * wanted to keep `Connection` active in async I/O context
+    /// * useful also to keep `Connection` active in async I/O context
     pub fn stream(&self) -> impl IsA<IOStream> {
-        match self.tls_client_connection.clone() {
-            Some(tls_client_connection) => tls_client_connection.upcast::<IOStream>(),
+        // * do not replace with `tls_client_connection.base_io_stream()`
+        //   as it will not work for user certificate sessions!
+        match self.certificate {
+            Some(_) => self.tls_client_connection.clone().upcast::<IOStream>(),
             None => self.socket_connection.clone().upcast::<IOStream>(),
         }
-    }
-
-    /// Get [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html) for `Self`
-    /// * compatible with both user and guest connection types
-    pub fn tls_client_connection(&self) -> Result<TlsClientConnection, Error> {
-        match self.tls_client_connection.clone() {
-            // User session
-            Some(tls_client_connection) => Ok(tls_client_connection),
-            // Guest session
-            None => {
-                // Create new wrapper for `IOStream` to interact `TlsClientConnection` API
-                match TlsClientConnection::new(
-                    self.stream().as_ref(),
-                    self.server_identity.as_ref(),
-                ) {
-                    Ok(tls_client_connection) => Ok(tls_client_connection),
-                    Err(e) => Err(Error::TlsClientConnection(e)),
-                }
-            }
-        }
-    }
-}
-
-// Tools
-
-pub fn new_tls_client_connection(
-    socket_connection: &SocketConnection,
-    certificate: &TlsCertificate,
-    server_identity: Option<&NetworkAddress>,
-) -> Result<TlsClientConnection, Error> {
-    if socket_connection.is_closed() {
-        return Err(Error::Closed);
-    }
-
-    // https://geminiprotocol.net/docs/protocol-specification.gmi#the-use-of-tls
-    match TlsClientConnection::new(socket_connection, server_identity) {
-        Ok(tls_client_connection) => {
-            // https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
-            tls_client_connection.set_certificate(certificate);
-
-            // @TODO handle exceptions
-            // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections
-            tls_client_connection.set_require_close_notify(true);
-
-            // @TODO host validation
-            // https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation
-            tls_client_connection.connect_accept_certificate(move |_, _, _| true);
-
-            Ok(tls_client_connection)
-        }
-        Err(e) => Err(Error::TlsClientConnection(e)),
     }
 }

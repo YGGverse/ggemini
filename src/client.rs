@@ -4,12 +4,10 @@
 pub mod connection;
 pub mod error;
 pub mod response;
-pub mod session;
 
 pub use connection::Connection;
 pub use error::Error;
 pub use response::Response;
-pub use session::Session;
 
 use gio::{
     prelude::{IOStreamExt, OutputStreamExt, SocketClientExt, TlsConnectionExt},
@@ -26,7 +24,6 @@ pub const DEFAULT_TIMEOUT: u32 = 10;
 /// Provides high-level API for session-safe interaction with
 /// [Gemini](https://geminiprotocol.net) socket server
 pub struct Client {
-    session: Rc<Session>,
     pub socket: SocketClient,
 }
 
@@ -63,23 +60,13 @@ impl Client {
         });
 
         // Done
-        Self {
-            session: Rc::new(Session::new()),
-            socket,
-        }
+        Self { socket }
     }
 
     // Actions
 
     /// High-level method make new async request to given [Uri](https://docs.gtk.org/glib/struct.Uri.html),
     /// callback with new `Response`on success or `Error` on failure
-    ///
-    /// * implement `certificate` comparison with previously defined for this `uri`, force rehandshake if does not match
-    /// * method does not close new `Connection` by default, hold it in `Session`,
-    ///   expect from user manual `Response` handle with close act on complete
-    /// * ignores default session resumption provided by Glib TLS backend,
-    ///   instead, applies new `certificate` to available sessions match
-    ///   `uri` [scope](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60)
     pub fn request_async(
         &self,
         uri: Uri,
@@ -92,56 +79,43 @@ impl Client {
         // * guest sessions will not work without!
         self.socket.set_tls(certificate.is_none());
 
-        // Update previous session if available for this `uri`, does force rehandshake on `certificate` change
-        match self.session.update(&uri, certificate.as_ref()) {
-            // Begin new connection
-            // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
-            //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
-            Ok(()) => match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
-                Ok(network_address) => self.socket.connect_async(
-                    &network_address.clone(),
-                    match cancellable {
-                        Some(ref cancellable) => Some(cancellable.clone()),
-                        None => None::<Cancellable>,
-                    }
-                    .as_ref(),
-                    {
-                        let session = self.session.clone();
-                        move |result| match result {
+        // Begin new connection
+        // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
+        //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
+        match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
+            Ok(network_address) => self.socket.connect_async(
+                &network_address.clone(),
+                match cancellable {
+                    Some(ref cancellable) => Some(cancellable.clone()),
+                    None => None::<Cancellable>,
+                }
+                .as_ref(),
+                move |result| match result {
+                    Ok(connection) => {
+                        // Wrap required connection dependencies into the struct holder
+                        match Connection::new(
+                            connection,
+                            certificate,
+                            Some(network_address),
+                            cancellable.clone(),
+                        ) {
                             Ok(connection) => {
-                                // Wrap required connection dependencies into the struct holder
-                                match Connection::new_wrap(
-                                    connection,
-                                    certificate,
-                                    Some(network_address),
-                                    cancellable.clone(),
-                                ) {
-                                    Ok(connection) => {
-                                        // Wrap to shared reference support clone semantics
-                                        let connection = Rc::new(connection);
-
-                                        // Renew session
-                                        session.set(uri.to_string(), connection.clone());
-
-                                        // Begin new request
-                                        request_async(
-                                            connection,
-                                            uri.to_string(),
-                                            priority,
-                                            cancellable,
-                                            callback, // result
-                                        )
-                                    }
-                                    Err(e) => callback(Err(Error::Connection(e))),
-                                }
+                                // Begin new request
+                                request_async(
+                                    Rc::new(connection),
+                                    uri.to_string(),
+                                    priority,
+                                    cancellable,
+                                    callback, // result
+                                )
                             }
-                            Err(e) => callback(Err(Error::Connect(e))),
+                            Err(e) => callback(Err(Error::Connection(e))),
                         }
-                    },
-                ),
-                Err(e) => callback(Err(Error::NetworkAddress(e))),
-            },
-            Err(e) => callback(Err(Error::Session(e))),
+                    }
+                    Err(e) => callback(Err(Error::Connect(e))),
+                },
+            ),
+            Err(e) => callback(Err(Error::NetworkAddress(e))),
         }
     }
 }

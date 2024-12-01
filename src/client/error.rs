@@ -9,7 +9,6 @@ pub enum Error {
     OutputStream(glib::Error),
     Request(glib::Error),
     Response(crate::client::response::Error),
-    Session(crate::client::session::Error),
 }
 
 impl Display for Error {
@@ -35,9 +34,6 @@ impl Display for Error {
             }
             Self::Response(e) => {
                 write!(f, "Response error: {e}")
-            }
-            Self::Session(e) => {
-                write!(f, "Session error: {e}")
             }
         }
     }
