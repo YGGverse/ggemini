@@ -65,21 +65,17 @@ impl Client {
                 Some(&cancellable.clone()),
                 move |result| match result {
                     Ok(socket_connection) => {
-                        // Wrap required connection dependencies into the struct holder
                         match Connection::new(socket_connection, certificate, Some(network_address))
                         {
-                            Ok(connection) => {
-                                // Begin new request
-                                connection.request_async(
-                                    uri.to_string(),
-                                    priority,
-                                    cancellable,
-                                    move |result| match result {
-                                        Ok(response) => callback(Ok(response)),
-                                        Err(e) => callback(Err(Error::Connection(e))),
-                                    },
-                                )
-                            }
+                            Ok(connection) => connection.request_async(
+                                uri.to_string(),
+                                priority,
+                                cancellable,
+                                move |result| match result {
+                                    Ok(response) => callback(Ok(response)),
+                                    Err(e) => callback(Err(Error::Connection(e))),
+                                },
+                            ),
                             Err(e) => callback(Err(Error::Connection(e))),
                         }
                     }
