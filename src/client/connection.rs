@@ -91,8 +91,8 @@ impl Connection {
         // * do not replace with `tls_client_connection.base_io_stream()`
         //   as it will not work properly for user certificate sessions!
         match self.tls_client_connection.certificate().is_some() {
-            true => self.tls_client_connection.clone().upcast::<IOStream>(),
-            false => self.socket_connection.clone().upcast::<IOStream>(),
+            true => self.tls_client_connection.clone().upcast::<IOStream>(), // is user session
+            false => self.socket_connection.clone().upcast::<IOStream>(),    // is guest session
         }
     }
 }
