@@ -100,7 +100,7 @@ impl Client {
 
     // Setters
 
-    /// Change `session-resumption-enabled` property (`false` by default)
+    /// Change glib-networking `session-resumption-enabled` property (`false` by default)
     /// * [Gemini specification](https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates)
     /// * [GnuTLS manual](https://www.gnutls.org/manual/html_node/Session-resumption.html)
     pub fn set_session_resumption(&mut self, is_enabled: bool) {
