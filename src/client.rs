@@ -44,8 +44,8 @@ impl Client {
 
         // Connect events
         socket.connect_event(|_, event, _, stream| {
-            // This condition have effect only for guest TLS connections
-            // * for user certificates validation, use `Connection` impl
+            // Condition applicable only for guest TLS connections
+            // * for user certificates validation, see `new_tls_client_connection`
             if event == SocketClientEvent::TlsHandshaking {
                 // Begin guest certificate validation
                 stream
