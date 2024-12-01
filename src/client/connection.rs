@@ -9,7 +9,7 @@ use gio::{
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::{
-    object::{Cast, IsA, ObjectExt},
+    object::{Cast, ObjectExt},
     Bytes, Priority,
 };
 
@@ -76,8 +76,9 @@ impl Connection {
     /// Get [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
     /// * compatible with user (certificate) and guest (certificate-less) connection type
     /// * useful to keep `Connection` reference active in async I/O context
-    pub fn stream(&self) -> impl IsA<IOStream> {
+    pub fn stream(&self) -> IOStream {
         self.tls_client_connection.clone().upcast::<IOStream>()
+        // * also `base_io_stream` method available @TODO
     }
 }
 
