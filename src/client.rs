@@ -15,7 +15,6 @@ use gio::{
     TlsClientConnection,
 };
 use glib::{object::Cast, Bytes, Priority, Uri};
-use std::rc::Rc;
 
 pub const DEFAULT_TIMEOUT: u32 = 10;
 
@@ -104,7 +103,7 @@ impl Client {
                             Ok(connection) => {
                                 // Begin new request
                                 request_async(
-                                    Rc::new(connection),
+                                    connection,
                                     uri.to_string(),
                                     priority,
                                     cancellable,
@@ -125,7 +124,7 @@ impl Client {
 /// Middle-level method to make new request to `Connection`
 /// * callback with new `Response`on success or `Error` on failure
 pub fn request_async(
-    connection: Rc<Connection>,
+    connection: Connection,
     query: String,
     priority: Option<Priority>,
     cancellable: Option<Cancellable>,
