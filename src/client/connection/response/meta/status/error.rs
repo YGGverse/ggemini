@@ -17,7 +17,7 @@ impl Display for Error {
                 write!(f, "Protocol error")
             }
             Self::Undefined => {
-                write!(f, "Undefined error")
+                write!(f, "Undefined")
             }
         }
     }
