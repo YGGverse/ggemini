@@ -40,10 +40,11 @@ fn main() -> ExitCode {
         None, // optional `GTlsCertificate`
         |result: Result<Response, Error>| match result {
             Ok(response) => {
+                // route by status code
                 match response.meta.status {
-                    // route by status code
+                    // is code 20, handle `GIOStream` by content type
                     Status::Success => match response.meta.mime {
-                        // handle `GIOStream` by content type
+                        // is gemtext, see also ggemtext crate!
                         Some(Mime::TextGemini) => todo!(),
                         _ => todo!(),
                     },
