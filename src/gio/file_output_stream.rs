@@ -16,9 +16,9 @@ pub fn move_all_from_stream_async(
     cancellable: Cancellable,
     priority: Priority,
     bytes: (
-        usize, // bytes_in_chunk
-        usize, // bytes_total_limit
-        usize, // bytes_total
+        usize,         // bytes_in_chunk
+        Option<usize>, // bytes_total_limit, `None` to unlimited
+        usize,         // bytes_total
     ),
     callback: (
         impl Fn((Bytes, usize)) + 'static,                      // on_chunk
@@ -41,8 +41,10 @@ pub fn move_all_from_stream_async(
                 on_chunk((bytes.clone(), bytes_total));
 
                 // Validate max size
-                if bytes_total > bytes_total_limit {
-                    return on_complete(Err(Error::BytesTotal(bytes_total, bytes_total_limit)));
+                if let Some(bytes_total_limit) = bytes_total_limit {
+                    if bytes_total > bytes_total_limit {
+                        return on_complete(Err(Error::BytesTotal(bytes_total, bytes_total_limit)));
+                    }
                 }
 
                 // No bytes were read, end of stream
