@@ -20,7 +20,7 @@ pub fn from_stream_async(
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
     on_chunk: impl Fn(Bytes, usize) + 'static,
-    on_complete: impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
+    on_complete: impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static,
 ) {
     move_all_from_stream_async(
         base_io_stream,
@@ -46,8 +46,8 @@ pub fn move_all_from_stream_async(
         usize, // bytes_total
     ),
     callback: (
-        impl Fn(Bytes, usize) + 'static,                         // on_chunk
-        impl FnOnce(Result<MemoryInputStream, Error>) + 'static, // on_complete
+        impl Fn(Bytes, usize) + 'static, // on_chunk
+        impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static, // on_complete
     ),
 ) {
     let (on_chunk, on_complete) = callback;
@@ -72,7 +72,7 @@ pub fn move_all_from_stream_async(
 
                 // No bytes were read, end of stream
                 if bytes.len() == 0 {
-                    return on_complete(Ok(memory_input_stream));
+                    return on_complete(Ok((memory_input_stream, bytes_total)));
                 }
 
                 // Write chunk bytes
