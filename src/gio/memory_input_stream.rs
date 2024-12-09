@@ -19,7 +19,7 @@ pub fn from_stream_async(
     priority: Priority,
     bytes_in_chunk: usize,
     bytes_total_limit: usize,
-    on_chunk: impl Fn((Bytes, usize)) + 'static,
+    on_chunk: impl Fn(Bytes, usize) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
 ) {
     move_all_from_stream_async(
@@ -46,7 +46,7 @@ pub fn move_all_from_stream_async(
         usize, // bytes_total
     ),
     callback: (
-        impl Fn((Bytes, usize)) + 'static,                       // on_chunk
+        impl Fn(Bytes, usize) + 'static,                         // on_chunk
         impl FnOnce(Result<MemoryInputStream, Error>) + 'static, // on_complete
     ),
 ) {
@@ -63,7 +63,7 @@ pub fn move_all_from_stream_async(
                 let bytes_total = bytes_total + bytes.len();
 
                 // Callback chunk function
-                on_chunk((bytes.clone(), bytes_total));
+                on_chunk(bytes.clone(), bytes_total);
 
                 // Validate max size
                 if bytes_total > bytes_total_limit {

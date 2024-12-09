@@ -21,7 +21,7 @@ pub fn move_all_from_stream_async(
         usize,         // bytes_total
     ),
     callback: (
-        impl Fn((Bytes, usize)) + 'static,                      // on_chunk
+        impl Fn(Bytes, usize) + 'static,                        // on_chunk
         impl FnOnce(Result<FileOutputStream, Error>) + 'static, // on_complete
     ),
 ) {
@@ -38,7 +38,7 @@ pub fn move_all_from_stream_async(
                 let bytes_total = bytes_total + bytes.len();
 
                 // Callback chunk function
-                on_chunk((bytes.clone(), bytes_total));
+                on_chunk(bytes.clone(), bytes_total);
 
                 // Validate max size
                 if let Some(bytes_total_limit) = bytes_total_limit {
