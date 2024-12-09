@@ -22,9 +22,9 @@ pub fn from_stream_async(
     on_chunk: impl Fn((Bytes, usize)) + 'static,
     on_complete: impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
 ) {
-    read_all_from_stream_async(
-        MemoryInputStream::new(),
+    move_all_from_stream_async(
         base_io_stream,
+        MemoryInputStream::new(),
         cancelable,
         priority,
         (bytes_in_chunk, bytes_total_limit, 0),
@@ -32,18 +32,22 @@ pub fn from_stream_async(
     );
 }
 
-/// Asynchronously read entire [InputStream](https://docs.gtk.org/gio/class.InputStream.html)
-/// from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+/// Asynchronously move all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
+/// to [MemoryInputStream](https://docs.gtk.org/gio/class.MemoryInputStream.html)
 /// * require `IOStream` reference to keep `Connection` active in async thread
-pub fn read_all_from_stream_async(
-    memory_input_stream: MemoryInputStream,
+pub fn move_all_from_stream_async(
     base_io_stream: impl IsA<IOStream>,
-    cancelable: Cancellable,
+    memory_input_stream: MemoryInputStream,
+    cancellable: Cancellable,
     priority: Priority,
-    bytes: (usize, usize, usize),
+    bytes: (
+        usize, // bytes_in_chunk
+        usize, // bytes_total_limit
+        usize, // bytes_total
+    ),
     callback: (
-        impl Fn((Bytes, usize)) + 'static,
-        impl FnOnce(Result<MemoryInputStream, Error>) + 'static,
+        impl Fn((Bytes, usize)) + 'static,                       // on_chunk
+        impl FnOnce(Result<MemoryInputStream, Error>) + 'static, // on_complete
     ),
 ) {
     let (on_chunk, on_complete) = callback;
@@ -52,7 +56,7 @@ pub fn read_all_from_stream_async(
     base_io_stream.input_stream().read_bytes_async(
         bytes_in_chunk,
         priority,
-        Some(&cancelable.clone()),
+        Some(&cancellable.clone()),
         move |result| match result {
             Ok(bytes) => {
                 // Update bytes total
@@ -75,10 +79,10 @@ pub fn read_all_from_stream_async(
                 memory_input_stream.add_bytes(&bytes);
 
                 // Continue
-                read_all_from_stream_async(
-                    memory_input_stream,
+                move_all_from_stream_async(
                     base_io_stream,
-                    cancelable,
+                    memory_input_stream,
+                    cancellable,
                     priority,
                     (bytes_in_chunk, bytes_total_limit, bytes_total),
                     (on_chunk, on_complete),
