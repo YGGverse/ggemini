@@ -14,19 +14,28 @@ use std::path::Path;
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
 #[derive(Debug)]
 pub enum Mime {
-    // Text
+    // text
     TextGemini,
     TextPlain,
-    // Image
+    /// Match unlisted `text/*`
+    Text,
+    // image
     ImageGif,
     ImageJpeg,
     ImagePng,
     ImageSvg,
     ImageWebp,
-    // Audio
+    /// Match unlisted `image/*`
+    Image,
+    // audio
     AudioFlac,
     AudioMpeg,
     AudioOgg,
+    /// Match unlisted `audio/*`
+    Audio,
+    // other
+    /// Match unlisted `application/*`
+    Application,
 } // @TODO
 
 impl Mime {
@@ -91,6 +100,10 @@ impl Mime {
             return Ok(Some(Self::TextPlain));
         }
 
+        if value.contains("text/") {
+            return Ok(Some(Self::Text));
+        }
+
         // Image
         if value.contains("image/gif") {
             return Ok(Some(Self::ImageGif));
@@ -112,6 +125,10 @@ impl Mime {
             return Ok(Some(Self::ImageWebp));
         }
 
+        if value.contains("image/") {
+            return Ok(Some(Self::Image));
+        }
+
         // Audio
         if value.contains("audio/flac") {
             return Ok(Some(Self::AudioFlac));
@@ -124,6 +141,17 @@ impl Mime {
         if value.contains("audio/ogg") {
             return Ok(Some(Self::AudioOgg));
         }
+
+        if value.contains("audio/") {
+            return Ok(Some(Self::Audio));
+        }
+
+        // Other
+        if value.contains("application/") {
+            return Ok(Some(Self::Application));
+        }
+
+        // application/x-tar
 
         // Some type exist, but not defined yet (on status code is 2*)
         if value.starts_with("2") && value.contains("/") {
