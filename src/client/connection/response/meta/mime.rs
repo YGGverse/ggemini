@@ -8,7 +8,7 @@
 pub mod error;
 pub use error::Error;
 
-use glib::{GString, Uri};
+use glib::{GString, Regex, RegexCompileFlags, RegexMatchFlags, Uri};
 use std::path::Path;
 
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
@@ -80,7 +80,7 @@ impl Mime {
             Some("flac") => Ok(Self::AudioFlac),
             Some("mp3") => Ok(Self::AudioMpeg),
             Some("oga" | "ogg" | "opus" | "spx") => Ok(Self::AudioOgg),
-            _ => Err(Error::Undefined),
+            _ => Err(Error::Undefined(None)),
         } // @TODO extension to lowercase
     }
 
@@ -155,7 +155,16 @@ impl Mime {
 
         // Some type exist, but not defined yet (on status code is 2*)
         if value.starts_with("2") && value.contains("/") {
-            return Err(Error::Undefined);
+            return Err(Error::Undefined(
+                Regex::split_simple(
+                    r"^2\d{1}\s([^\/]+\/[^\s]+)",
+                    value,
+                    RegexCompileFlags::DEFAULT,
+                    RegexMatchFlags::DEFAULT,
+                )
+                .get(1)
+                .map(|this| this.to_string()),
+            ));
         }
 
         // Done

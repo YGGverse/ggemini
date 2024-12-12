@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result};
 pub enum Error {
     Decode(std::string::FromUtf8Error),
     Protocol,
-    Undefined,
+    Undefined(Option<String>),
 }
 
 impl Display for Error {
@@ -16,8 +16,15 @@ impl Display for Error {
             Self::Protocol => {
                 write!(f, "Protocol error")
             }
-            Self::Undefined => {
-                write!(f, "Undefined")
+            Self::Undefined(e) => {
+                write!(
+                    f,
+                    "{}",
+                    match e {
+                        Some(value) => format!("`{value}` undefined"),
+                        None => "Could not parse value".to_string(),
+                    }
+                )
             }
         }
     }
