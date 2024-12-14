@@ -6,7 +6,6 @@ pub use error::Error;
 use glib::{GString, Regex, RegexCompileFlags, RegexMatchFlags};
 
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
-
 pub struct Mime {
     pub value: String,
 }
