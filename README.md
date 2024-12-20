@@ -1,5 +1,7 @@
 # ggemini
 
+![Build](https://github.com/YGGverse/ggemini/actions/workflows/build.yml/badge.svg)
+
 Glib/Gio-oriented network API for [Gemini protocol](https://geminiprotocol.net/)
 
 > [!IMPORTANT]
