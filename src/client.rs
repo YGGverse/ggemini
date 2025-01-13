@@ -65,7 +65,7 @@ impl Client {
         // Begin new connection
         // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
         //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
-        match request.to_network_address() {
+        match request.to_network_address(crate::DEFAULT_PORT) {
             Ok(network_address) => {
                 self.socket
                     .connect_async(&network_address.clone(), Some(&cancellable.clone()), {

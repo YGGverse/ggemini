@@ -18,13 +18,19 @@ impl Request {
     // Getters
 
     /// Get [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) for `Self`
-    pub fn to_network_address(&self) -> Result<NetworkAddress, Error> {
+    pub fn to_network_address(&self, default_port: u16) -> Result<NetworkAddress, Error> {
+        let uri = match self {
+            Self::Gemini(ref request) => request.uri.clone(),
+            Self::Titan(ref request) => request.uri.clone(),
+        };
+        let port = uri.port();
         match crate::gio::network_address::from_uri(
-            &match self {
-                Self::Gemini(ref request) => request.uri.clone(),
-                Self::Titan(ref request) => request.uri.clone(),
+            &uri,
+            if port.is_positive() {
+                port as u16
+            } else {
+                default_port
             },
-            crate::DEFAULT_PORT,
         ) {
             Ok(network_address) => Ok(network_address),
             Err(e) => Err(Error::NetworkAddress(e)),
