@@ -7,11 +7,11 @@ use ggemini::client::connection::Request;
 fn client_connection_request_gemini() {
     const REQUEST: &str = "gemini://geminiprotocol.net/";
     assert_eq!(
-        &match Request::gemini(Uri::parse(REQUEST, UriFlags::NONE).unwrap()) {
-            Request::Gemini(request) => request.uri.to_string(),
-            _ => panic!(),
-        },
-        REQUEST
+        std::str::from_utf8(
+            &Request::gemini(Uri::parse(REQUEST, UriFlags::NONE).unwrap()).to_bytes()
+        )
+        .unwrap(),
+        format!("{REQUEST}\r\n")
     );
 }
 
