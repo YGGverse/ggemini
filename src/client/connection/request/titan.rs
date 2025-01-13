@@ -9,18 +9,6 @@ pub struct Titan {
 }
 
 impl Titan {
-    // Constructors
-
-    /// Build valid new `Self`
-    pub fn build(uri: Uri, mime: String, token: Option<String>, data: Vec<u8>) -> Self {
-        Self {
-            uri,
-            mime,
-            token,
-            data,
-        } // @TODO validate
-    }
-
     // Getters
 
     /// Copy `Self` to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html)

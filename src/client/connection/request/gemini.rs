@@ -6,13 +6,6 @@ pub struct Gemini {
 }
 
 impl Gemini {
-    // Constructors
-
-    /// Build valid new `Self`
-    pub fn build(uri: Uri) -> Self {
-        Self { uri } // @TODO validate
-    }
-
     // Getters
 
     /// Copy `Self` to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html)
