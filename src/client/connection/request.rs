@@ -21,8 +21,8 @@ impl Request {
     pub fn to_network_address(&self) -> Result<NetworkAddress, Error> {
         match crate::gio::network_address::from_uri(
             &match self {
-                Request::Gemini(ref request) => request.uri.clone(),
-                Request::Titan(ref request) => request.uri.clone(),
+                Self::Gemini(ref request) => request.uri.clone(),
+                Self::Titan(ref request) => request.uri.clone(),
             },
             crate::DEFAULT_PORT,
         ) {
