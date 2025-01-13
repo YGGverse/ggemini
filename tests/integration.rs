@@ -25,7 +25,7 @@ fn client_connection_request_titan() {
     assert_eq!(
         std::str::from_utf8(
             &Request::titan(
-                Uri::parse(&format!("{REQUEST}?arg={ARGUMENT}"), UriFlags::NONE).unwrap(),
+                Uri::parse(&format!("{REQUEST}?argument={ARGUMENT}"), UriFlags::NONE).unwrap(),
                 DATA.to_vec(),
                 Some(MIME.to_string()),
                 Some(TOKEN.to_string()),
@@ -34,7 +34,7 @@ fn client_connection_request_titan() {
         )
         .unwrap(),
         format!(
-            "{REQUEST};size={};mime={MIME};token={TOKEN}?arg={ARGUMENT}\r\n{}",
+            "{REQUEST};size={};mime={MIME};token={TOKEN}?argument={ARGUMENT}\r\n{}",
             DATA.len(),
             std::str::from_utf8(DATA).unwrap(),
         )
