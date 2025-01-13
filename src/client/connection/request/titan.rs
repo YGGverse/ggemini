@@ -3,9 +3,9 @@ use glib::{Bytes, Uri};
 /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol enum object for `Request`
 pub struct Titan {
     pub uri: Uri,
-    pub mime: String,
-    pub token: Option<String>,
     pub data: Vec<u8>,
+    pub mime: Option<String>,
+    pub token: Option<String>,
 }
 
 impl Titan {
@@ -17,7 +17,10 @@ impl Titan {
         let size = self.data.len();
 
         // Build header
-        let mut header = format!("{};size={size};mime={}", self.uri, self.mime);
+        let mut header = format!("{};size={size}", self.uri);
+        if let Some(ref mime) = self.mime {
+            header.push_str(&format!(";mime={mime}"));
+        }
         if let Some(ref token) = self.token {
             header.push_str(&format!(";token={token}"));
         }

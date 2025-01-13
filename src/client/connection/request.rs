@@ -24,12 +24,12 @@ impl Request {
     }
 
     /// Create new `Self` for [Titan protocol](gemini://transjovian.org/titan/page/The%20Titan%20Specification)
-    pub fn titan(uri: Uri, mime: String, token: Option<String>, data: Vec<u8>) -> Self {
+    pub fn titan(uri: Uri, data: Vec<u8>, mime: Option<String>, token: Option<String>) -> Self {
         Self::Titan(Titan {
             uri,
+            data,
             mime,
             token,
-            data,
         })
     }
 
