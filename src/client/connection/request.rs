@@ -8,7 +8,7 @@ pub use titan::Titan;
 
 use gio::NetworkAddress;
 
-/// Single `Request` holder for different protocols
+/// Single `Request` implementation for different protocols
 pub enum Request {
     Gemini(Gemini),
     Titan(Titan),
