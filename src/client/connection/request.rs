@@ -7,7 +7,7 @@ pub use gemini::Gemini;
 pub use titan::Titan;
 
 use gio::NetworkAddress;
-use glib::Uri;
+use glib::{Bytes, Uri};
 
 /// Single `Request` implementation for different protocols
 pub enum Request {
@@ -34,6 +34,14 @@ impl Request {
     }
 
     // Getters
+
+    /// Get [Bytes](https://docs.gtk.org/glib/struct.Bytes.html) for `Self`
+    pub fn to_bytes(&self) -> Bytes {
+        match self {
+            Self::Gemini(ref request) => request.to_bytes(),
+            Self::Titan(ref request) => request.to_bytes(),
+        }
+    }
 
     /// Get [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) for `Self`
     pub fn to_network_address(&self, default_port: u16) -> Result<NetworkAddress, Error> {
