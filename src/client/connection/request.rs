@@ -1,10 +1,33 @@
+pub mod error;
 pub mod gemini;
 pub mod titan;
 
+pub use error::Error;
 pub use gemini::Gemini;
 pub use titan::Titan;
 
+use gio::NetworkAddress;
+
+/// Single `Request` holder for different protocols
 pub enum Request {
     Gemini(Gemini),
     Titan(Titan),
+}
+
+impl Request {
+    // Getters
+
+    /// Convert `Self` to [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html)
+    pub fn to_network_address(&self) -> Result<NetworkAddress, Error> {
+        match crate::gio::network_address::from_uri(
+            &match self {
+                Request::Gemini(ref request) => request.uri.clone(),
+                Request::Titan(ref request) => request.uri.clone(),
+            },
+            crate::DEFAULT_PORT,
+        ) {
+            Ok(network_address) => Ok(network_address),
+            Err(e) => Err(Error::NetworkAddress(e)),
+        }
+    }
 }

@@ -4,8 +4,7 @@ use std::fmt::{Display, Formatter, Result};
 pub enum Error {
     Connect(glib::Error),
     Connection(crate::client::connection::Error),
-    NetworkAddress(crate::gio::network_address::Error),
-    Request(glib::Error),
+    Request(crate::client::connection::request::Error),
 }
 
 impl Display for Error {
@@ -16,9 +15,6 @@ impl Display for Error {
             }
             Self::Connect(e) => {
                 write!(f, "Connect error: {e}")
-            }
-            Self::NetworkAddress(e) => {
-                write!(f, "Network address error: {e}")
             }
             Self::Request(e) => {
                 write!(f, "Request error: {e}")
