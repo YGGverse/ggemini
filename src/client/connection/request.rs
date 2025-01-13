@@ -17,7 +17,7 @@ pub enum Request {
 impl Request {
     // Getters
 
-    /// Convert `Self` to [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html)
+    /// Get [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) for `Self`
     pub fn to_network_address(&self) -> Result<NetworkAddress, Error> {
         match crate::gio::network_address::from_uri(
             &match self {
