@@ -4,11 +4,11 @@
 pub mod connection;
 pub mod error;
 
-pub use connection::Connection;
+pub use connection::{Connection, Request, Response};
 pub use error::Error;
 
 use gio::{prelude::SocketClientExt, Cancellable, SocketClient, SocketProtocol, TlsCertificate};
-use glib::{Priority, Uri};
+use glib::Priority;
 
 // Defaults
 
@@ -56,16 +56,22 @@ impl Client {
     /// * compatible with user (certificate) and guest (certificate-less) connection types
     pub fn request_async(
         &self,
-        uri: Uri,
+        request: Request,
         priority: Priority,
         cancellable: Cancellable,
         certificate: Option<TlsCertificate>,
-        callback: impl Fn(Result<connection::Response, Error>) + 'static,
+        callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
         // Begin new connection
         // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
         //   [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
-        match crate::gio::network_address::from_uri(&uri, crate::DEFAULT_PORT) {
+        match crate::gio::network_address::from_uri(
+            &match request {
+                Request::Gemini(ref request) => request.uri.clone(),
+                Request::Titan(ref request) => request.uri.clone(),
+            },
+            crate::DEFAULT_PORT,
+        ) {
             Ok(network_address) => {
                 self.socket
                     .connect_async(&network_address.clone(), Some(&cancellable.clone()), {
@@ -78,15 +84,27 @@ impl Client {
                                     Some(network_address),
                                     is_session_resumption,
                                 ) {
-                                    Ok(connection) => connection.request_async(
-                                        uri.to_string(),
-                                        priority,
-                                        cancellable,
-                                        move |result| match result {
-                                            Ok(response) => callback(Ok(response)),
-                                            Err(e) => callback(Err(Error::Connection(e))),
-                                        },
-                                    ),
+                                    Ok(connection) => match request {
+                                        Request::Gemini(request) => connection
+                                            .gemini_request_async(
+                                                request,
+                                                priority,
+                                                cancellable,
+                                                move |result| match result {
+                                                    Ok(response) => callback(Ok(response)),
+                                                    Err(e) => callback(Err(Error::Connection(e))),
+                                                },
+                                            ),
+                                        Request::Titan(request) => connection.titan_request_async(
+                                            request,
+                                            priority,
+                                            cancellable,
+                                            move |result| match result {
+                                                Ok(response) => callback(Ok(response)),
+                                                Err(e) => callback(Err(Error::Connection(e))),
+                                            },
+                                        ),
+                                    },
                                     Err(e) => callback(Err(Error::Connection(e))),
                                 }
                             }

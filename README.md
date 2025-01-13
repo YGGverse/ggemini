@@ -25,20 +25,25 @@ cargo add ggemini
 ### Example
 
 ``` rust
-use gtk::gio::*;
-use gtk::glib::*;
+use gio::*;
+use glib::*;
 
 use ggemini::client::{
     connection::{
-        response::meta::{Mime, Status},
-        Response,
+        Request, Response,
+        request::Gemini,
+        response::meta::{Mime, Status}
     },
     Client, Error,
 };
 
 fn main() -> ExitCode {
     Client::new().request_async(
-        Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap(),
+        Request::Gemini(
+            Gemini::build(
+                Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap()
+            )
+        ),
         Priority::DEFAULT,
         Cancellable::new(),
         None, // optional `GTlsCertificate`
@@ -63,6 +68,8 @@ fn main() -> ExitCode {
 }
 ```
 
-## See also
+* to send requests using Titan protocol, see also `titan_request_async` implementation
+
+## Other crates
 
 * [ggemtext](https://github.com/YGGverse/ggemtext) - Glib-oriented Gemtext API

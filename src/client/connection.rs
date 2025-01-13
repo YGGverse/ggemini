@@ -1,7 +1,9 @@
 pub mod error;
+pub mod request;
 pub mod response;
 
 pub use error::Error;
+pub use request::{Gemini, Request, Titan};
 pub use response::Response;
 
 use gio::{
@@ -46,18 +48,69 @@ impl Connection {
 
     // Actions
 
-    /// Make new request to `Self` connection
-    /// * callback with new `Response` on success or `Error` on failure
+    /// Send new `Request` to `Self` connection using
+    /// [Gemini](https://geminiprotocol.net/docs/protocol-specification.gmi) or
+    /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol
     pub fn request_async(
         self,
-        query: String,
+        request: Request,
         priority: Priority,
         cancellable: Cancellable,
         callback: impl Fn(Result<Response, Error>) + 'static,
     ) {
-        // Send request
+        match request {
+            Request::Gemini(request) => {
+                self.gemini_request_async(request, priority, cancellable, callback)
+            }
+            Request::Titan(request) => {
+                self.titan_request_async(request, priority, cancellable, callback)
+            }
+        }
+    }
+
+    /// Make new request to `Self` connection using
+    /// [Gemini](https://geminiprotocol.net/docs/protocol-specification.gmi) protocol
+    /// * callback with new `Response` on success or `Error` on failure
+    /// * see also `request_async` method to send multi-protocol requests
+    pub fn gemini_request_async(
+        self,
+        request: Gemini,
+        priority: Priority,
+        cancellable: Cancellable,
+        callback: impl Fn(Result<Response, Error>) + 'static,
+    ) {
+        self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
+    }
+
+    /// Make new request to `Self` connection using
+    /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol
+    /// * callback with new `Response` on success or `Error` on failure
+    /// * see also `request_async` method to send multi-protocol requests
+    pub fn titan_request_async(
+        self,
+        request: Titan,
+        priority: Priority,
+        cancellable: Cancellable,
+        callback: impl Fn(Result<Response, Error>) + 'static,
+    ) {
+        self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
+    }
+
+    /// Low-level shared method to send raw bytes array over
+    /// [Gemini](https://geminiprotocol.net/docs/protocol-specification.gmi) or
+    /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol
+    /// * bytes array should include formatted header according to protocol selected
+    /// * for high-level requests see `gemini_request_async` and `titan_request_async` methods
+    /// * to construct multi-protocol request with single function, use `request_async` method
+    pub fn bytes_request_async(
+        self,
+        request: &Bytes,
+        priority: Priority,
+        cancellable: Cancellable,
+        callback: impl Fn(Result<Response, Error>) + 'static,
+    ) {
         self.stream().output_stream().write_bytes_async(
-            &Bytes::from(format!("{query}\r\n").as_bytes()),
+            request,
             priority,
             Some(&cancellable.clone()),
             move |result| match result {
