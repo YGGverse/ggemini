@@ -19,11 +19,13 @@ impl Request {
 
     /// Get [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) for `Self`
     pub fn to_network_address(&self, default_port: u16) -> Result<NetworkAddress, Error> {
-        let uri = match self {
-            Self::Gemini(ref request) => request.uri.clone(),
-            Self::Titan(ref request) => request.uri.clone(),
-        };
-        match crate::gio::network_address::from_uri(&uri, default_port) {
+        match crate::gio::network_address::from_uri(
+            &match self {
+                Self::Gemini(ref request) => request.uri.clone(),
+                Self::Titan(ref request) => request.uri.clone(),
+            },
+            default_port,
+        ) {
             Ok(network_address) => Ok(network_address),
             Err(e) => Err(Error::NetworkAddress(e)),
         }
