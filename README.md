@@ -68,7 +68,7 @@ fn main() -> ExitCode {
 }
 ```
 
-* to send requests using Titan protocol, see also `titan_request_async` implementation
+* to send requests using Titan protocol, see `titan_request_async` implementation
 
 ## Other crates
 
