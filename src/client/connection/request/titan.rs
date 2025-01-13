@@ -3,7 +3,6 @@ use glib::{Bytes, Uri};
 /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol enum object for `Request`
 pub struct Titan {
     pub uri: Uri,
-    pub size: usize,
     pub mime: String,
     pub token: Option<String>,
     pub data: Vec<u8>,
@@ -13,16 +12,9 @@ impl Titan {
     // Constructors
 
     /// Build valid new `Self`
-    pub fn build(
-        uri: Uri,
-        size: usize,
-        mime: String,
-        token: Option<String>,
-        data: Vec<u8>,
-    ) -> Self {
+    pub fn build(uri: Uri, mime: String, token: Option<String>, data: Vec<u8>) -> Self {
         Self {
             uri,
-            size,
             mime,
             token,
             data,
@@ -33,18 +25,19 @@ impl Titan {
 
     /// Copy `Self` to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html)
     pub fn to_bytes(&self) -> Bytes {
+        // Calculate data size
+        let size = self.data.len();
+
         // Build header
-        let mut header = format!("{};size={};mime={}", self.uri, self.size, self.mime);
+        let mut header = format!("{};size={size};mime={}", self.uri, self.mime);
         if let Some(ref token) = self.token {
             header.push_str(&format!(";token={token}"));
         }
         header.push_str("\r\n");
 
-        let header_bytes = header.into_bytes();
-
         // Build request
-        let mut bytes: Vec<u8> = Vec::with_capacity(self.size + header_bytes.len());
-        bytes.extend(header_bytes);
+        let mut bytes: Vec<u8> = Vec::with_capacity(size + 1024); // @TODO
+        bytes.extend(header.into_bytes());
         bytes.extend(&self.data);
 
         // Wrap result
