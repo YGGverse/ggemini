@@ -23,15 +23,7 @@ impl Request {
             Self::Gemini(ref request) => request.uri.clone(),
             Self::Titan(ref request) => request.uri.clone(),
         };
-        let port = uri.port();
-        match crate::gio::network_address::from_uri(
-            &uri,
-            if port.is_positive() {
-                port as u16
-            } else {
-                default_port
-            },
-        ) {
+        match crate::gio::network_address::from_uri(&uri, default_port) {
             Ok(network_address) => Ok(network_address),
             Err(e) => Err(Error::NetworkAddress(e)),
         }
