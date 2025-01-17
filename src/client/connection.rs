@@ -56,7 +56,7 @@ impl Connection {
         request: Request,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
         match request {
             Request::Gemini(request) => {
@@ -77,7 +77,7 @@ impl Connection {
         request: Gemini,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
         self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
     }
@@ -91,7 +91,7 @@ impl Connection {
         request: Titan,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
         self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
     }
@@ -107,7 +107,7 @@ impl Connection {
         request: &Bytes,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
         self.stream().output_stream().write_bytes_async(
             request,

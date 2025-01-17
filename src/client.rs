@@ -60,7 +60,7 @@ impl Client {
         priority: Priority,
         cancellable: Cancellable,
         certificate: Option<TlsCertificate>,
-        callback: impl Fn(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
         // Begin new connection
         // * [NetworkAddress](https://docs.gtk.org/gio/class.NetworkAddress.html) required for valid
