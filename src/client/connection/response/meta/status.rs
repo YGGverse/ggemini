@@ -35,6 +35,35 @@ pub enum Status {
     CertificateInvalid = 62,
 }
 
+impl std::fmt::Display for Status {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Status::Input => "Input",
+                Status::SensitiveInput => "Sensitive Input",
+                Status::Success => "Success",
+                Status::Redirect => "Redirect",
+                Status::PermanentRedirect => "Permanent Redirect",
+                Status::TemporaryFailure => "Temporary Failure",
+                Status::ServerUnavailable => "Server Unavailable",
+                Status::CgiError => "CGI Error",
+                Status::ProxyError => "Proxy Error",
+                Status::SlowDown => "Slow Down",
+                Status::PermanentFailure => "Permanent Failure",
+                Status::NotFound => "Not Found",
+                Status::ResourceGone => "Resource Gone",
+                Status::ProxyRequestRefused => "Proxy Request Refused",
+                Status::BadRequest => "Bad Request",
+                Status::CertificateRequest => "Certificate Request",
+                Status::CertificateUnauthorized => "Certificate Unauthorized",
+                Status::CertificateInvalid => "Certificate Invalid",
+            }
+        )
+    }
+}
+
 impl Status {
     /// Create new `Self` from UTF-8 buffer
     ///
