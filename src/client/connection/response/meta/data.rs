@@ -4,12 +4,14 @@
 pub mod error;
 pub use error::Error;
 
+use glib::GString;
+
 /// Meta **data** holder
 ///
 /// For example, `value` could contain:
 /// * placeholder text for 10, 11 status
 /// * URL string for 30, 31 status
-pub struct Data(String);
+pub struct Data(GString);
 
 impl Data {
     // Constructors
@@ -43,7 +45,7 @@ impl Data {
                 }
 
                 // Assumes the bytes are valid UTF-8
-                match String::from_utf8(bytes) {
+                match GString::from_utf8(bytes) {
                     Ok(data) => Ok(match data.is_empty() {
                         false => Some(Self(data)),
                         true => None,
@@ -60,6 +62,16 @@ impl Data {
     /// Get `Self` as `std::str`
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+
+    /// Get `Self` as `glib::GString`
+    pub fn as_gstring(&self) -> &GString {
+        &self.0
+    }
+
+    /// Get `glib::GString` copy of `Self`
+    pub fn to_gstring(&self) -> GString {
+        self.0.clone()
     }
 }
 
