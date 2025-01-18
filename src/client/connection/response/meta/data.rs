@@ -54,6 +54,13 @@ impl Data {
             None => Err(Error::Protocol),
         }
     }
+
+    // Getters
+
+    /// Get `Self` as `std::str`
+    pub fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
 }
 
 impl std::fmt::Display for Data {
