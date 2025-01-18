@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result};
 
 #[derive(Debug)]
 pub enum Error {
-    Decode(std::string::FromUtf8Error),
+    Decode(std::str::Utf8Error),
     Protocol,
     Undefined,
 }

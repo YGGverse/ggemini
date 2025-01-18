@@ -4,8 +4,6 @@
 pub mod error;
 pub use error::Error;
 
-use glib::GString;
-
 /// Holder for [status code](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
 #[derive(Debug)]
 pub enum Status {
@@ -70,8 +68,8 @@ impl Status {
     /// * includes `Self::from_string` parser, it means that given buffer should contain some **header**
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match buffer.get(0..2) {
-            Some(value) => match GString::from_utf8(value.to_vec()) {
-                Ok(string) => Self::from_string(string.as_str()),
+            Some(value) => match std::str::from_utf8(value) {
+                Ok(s) => Self::from_string(s),
                 Err(e) => Err(Error::Decode(e)),
             },
             None => Err(Error::Protocol),
