@@ -5,7 +5,8 @@ pub use error::Error;
 
 use glib::{GString, Regex, RegexCompileFlags, RegexMatchFlags};
 
-/// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
+/// MIME type holder for `Response` (by [Gemtext specification](https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters))
+/// * the value stored in lowercase
 pub struct Mime(String);
 
 impl std::fmt::Display for Mime {
