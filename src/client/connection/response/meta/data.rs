@@ -4,16 +4,12 @@
 pub mod error;
 pub use error::Error;
 
-use glib::GString;
-
 /// Meta **data** holder
 ///
 /// For example, `value` could contain:
 /// * placeholder text for 10, 11 status
 /// * URL string for 30, 31 status
-pub struct Data {
-    pub value: GString,
-}
+pub struct Data(String);
 
 impl Data {
     // Constructors
@@ -47,9 +43,9 @@ impl Data {
                 }
 
                 // Assumes the bytes are valid UTF-8
-                match GString::from_utf8(bytes) {
-                    Ok(value) => Ok(match value.is_empty() {
-                        false => Some(Self { value }),
+                match String::from_utf8(bytes) {
+                    Ok(data) => Ok(match data.is_empty() {
+                        false => Some(Self(data)),
                         true => None,
                     }),
                     Err(e) => Err(Error::Decode(e)),
@@ -57,5 +53,11 @@ impl Data {
             }
             None => Err(Error::Protocol),
         }
+    }
+}
+
+impl std::fmt::Display for Data {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
