@@ -68,7 +68,7 @@ impl Status {
     /// * includes `Self::from_string` parser, it means that given buffer should contain some **header**
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match buffer.get(0..2) {
-            Some(value) => match std::str::from_utf8(value) {
+            Some(b) => match std::str::from_utf8(b) {
                 Ok(s) => Self::from_string(s),
                 Err(e) => Err(Error::Decode(e)),
             },
