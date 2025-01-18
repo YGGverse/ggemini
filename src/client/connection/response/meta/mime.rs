@@ -23,7 +23,7 @@ impl Mime {
 
         // Parse meta bytes only
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
-            Some(utf8) => match std::str::from_utf8(utf8) {
+            Some(b) => match std::str::from_utf8(b) {
                 Ok(s) => Self::from_string(s),
                 Err(e) => Err(Error::Decode(e)),
             },
