@@ -3,7 +3,7 @@
 pub mod error;
 pub use error::Error;
 
-use glib::{GString, Regex, RegexCompileFlags, RegexMatchFlags};
+use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
 
 /// MIME type holder for `Response` (by [Gemtext specification](https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters))
 /// * the value stored in lowercase
@@ -29,22 +29,22 @@ impl Mime {
 
         // Parse meta bytes only
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
-            Some(value) => match GString::from_utf8(value.into()) {
-                Ok(string) => Self::from_string(&string),
+            Some(utf8) => match std::str::from_utf8(utf8) {
+                Ok(s) => Self::from_string(s),
                 Err(e) => Err(Error::Decode(e)),
             },
             None => Err(Error::Protocol),
         }
     }
 
-    /// Create new `Self` from string that includes **header**
+    /// Create new `Self` from `str::str` that includes **header**
     /// * return `None` for non 2* [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
-    pub fn from_string(subject: &str) -> Result<Option<Self>, Error> {
-        if !subject.starts_with("2") {
+    pub fn from_string(s: &str) -> Result<Option<Self>, Error> {
+        if !s.starts_with("2") {
             return Ok(None);
         }
-        match parse(subject) {
-            Some(value) => Ok(Some(Self(value.to_lowercase()))),
+        match parse(s) {
+            Some(v) => Ok(Some(Self(v.to_lowercase()))),
             None => Err(Error::Undefined),
         }
     }
@@ -58,10 +58,10 @@ impl Mime {
 }
 
 /// Extract MIME type from from string that includes **header**
-pub fn parse(value: &str) -> Option<String> {
+pub fn parse(s: &str) -> Option<String> {
     Regex::split_simple(
         r"^2\d{1}\s([^\/]+\/[^\s;]+)",
-        value,
+        s,
         RegexCompileFlags::DEFAULT,
         RegexMatchFlags::DEFAULT,
     )
