@@ -6,11 +6,17 @@ pub use error::Error;
 use glib::{GString, Regex, RegexCompileFlags, RegexMatchFlags};
 
 /// https://geminiprotocol.net/docs/gemtext-specification.gmi#media-type-parameters
-pub struct Mime {
-    pub value: String,
+pub struct Mime(String);
+
+impl std::fmt::Display for Mime {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 impl Mime {
+    // Constructors
+
     /// Create new `Self` from UTF-8 buffer (that includes **header**)
     /// * return `None` for non 2* [status codes](https://geminiprotocol.net/docs/protocol-specification.gmi#status-codes)
     pub fn from_utf8(buffer: &[u8]) -> Result<Option<Self>, Error> {
@@ -37,9 +43,16 @@ impl Mime {
             return Ok(None);
         }
         match parse(subject) {
-            Some(value) => Ok(Some(Self { value })),
+            Some(value) => Ok(Some(Self(value))),
             None => Err(Error::Undefined),
         }
+    }
+
+    // Getters
+
+    /// Get `Self` as `&str`
+    pub fn as_str(&self) -> &str {
+        &self.0
     }
 }
 
