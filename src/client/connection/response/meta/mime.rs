@@ -44,7 +44,7 @@ impl Mime {
             return Ok(None);
         }
         match parse(s) {
-            Some(v) => Ok(Some(Self(v.to_lowercase()))),
+            Some(v) => Ok(Some(Self(v))),
             None => Err(Error::Undefined),
         }
     }
@@ -66,5 +66,5 @@ pub fn parse(s: &str) -> Option<String> {
         RegexMatchFlags::DEFAULT,
     )
     .get(1)
-    .map(|this| this.to_string())
+    .map(|this| this.to_lowercase())
 }
