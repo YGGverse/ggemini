@@ -9,12 +9,6 @@ use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
 /// * the value stored in lowercase
 pub struct Mime(String);
 
-impl std::fmt::Display for Mime {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 impl Mime {
     // Constructors
 
@@ -54,6 +48,12 @@ impl Mime {
     /// Get `Self` as lowercase `std::str`
     pub fn as_str(&self) -> &str {
         self.0.as_str()
+    }
+}
+
+impl std::fmt::Display for Mime {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
