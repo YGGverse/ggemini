@@ -29,7 +29,7 @@ impl Mime {
         // Parse meta bytes only
         match buffer.get(..if len > MAX_LEN { MAX_LEN } else { len }) {
             Some(value) => match GString::from_utf8(value.into()) {
-                Ok(string) => Self::from_string(string.as_str()),
+                Ok(string) => Self::from_string(&string),
                 Err(e) => Err(Error::Decode(e)),
             },
             None => Err(Error::Protocol),
@@ -43,16 +43,16 @@ impl Mime {
             return Ok(None);
         }
         match parse(subject) {
-            Some(value) => Ok(Some(Self(value))),
+            Some(value) => Ok(Some(Self(value.to_lowercase()))),
             None => Err(Error::Undefined),
         }
     }
 
     // Getters
 
-    /// Get `Self` as `&str`
+    /// Get `Self` as lowercase `std::str`
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 }
 
