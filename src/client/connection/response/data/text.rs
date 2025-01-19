@@ -15,9 +15,7 @@ pub const BUFFER_CAPACITY: usize = 0x400; // 1024
 pub const BUFFER_MAX_SIZE: usize = 0xfffff; // 1M
 
 /// Container for text-based response data
-pub struct Text {
-    pub data: GString,
-}
+pub struct Text(GString);
 
 impl Default for Text {
     fn default() -> Self {
@@ -30,14 +28,12 @@ impl Text {
 
     /// Create new `Self`
     pub fn new() -> Self {
-        Self {
-            data: GString::new(),
-        }
+        Self(GString::new())
     }
 
     /// Create new `Self` from string
     pub fn from_string(data: &str) -> Self {
-        Self { data: data.into() }
+        Self(data.into())
     }
 
     /// Create new `Self` from UTF-8 buffer
@@ -65,6 +61,12 @@ impl Text {
                 Err(e) => on_complete(Err(e)),
             },
         );
+    }
+}
+
+impl std::fmt::Display for Text {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
