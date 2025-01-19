@@ -15,7 +15,7 @@ pub const BUFFER_CAPACITY: usize = 0x400; // 1024
 pub const BUFFER_MAX_SIZE: usize = 0xfffff; // 1M
 
 /// Container for text-based response data
-pub struct Text(GString);
+pub struct Text(String);
 
 impl Default for Text {
     fn default() -> Self {
@@ -28,7 +28,7 @@ impl Text {
 
     /// Create new `Self`
     pub fn new() -> Self {
-        Self(GString::new())
+        Self(String::new())
     }
 
     /// Create new `Self` from string
@@ -61,13 +61,6 @@ impl Text {
                 Err(e) => on_complete(Err(e)),
             },
         );
-    }
-
-    // Getters
-
-    /// Get `Self` as `glib::GString`
-    pub fn as_gstring(&self) -> &GString {
-        &self.0
     }
 }
 
