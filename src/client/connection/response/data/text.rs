@@ -62,6 +62,13 @@ impl Text {
             },
         );
     }
+
+    // Getters
+
+    /// Get `Self` as `glib::GString`
+    pub fn as_gstring(&self) -> &GString {
+        &self.0
+    }
 }
 
 impl std::fmt::Display for Text {
