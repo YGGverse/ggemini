@@ -9,7 +9,7 @@ pub use response::Response;
 // Local dependencies
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExt, OutputStreamExtManual, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::{
@@ -60,23 +60,44 @@ impl Connection {
         cancellable: Cancellable,
         callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
-        self.stream().output_stream().write_async(
+        let output_stream = self.stream().output_stream();
+        output_stream.clone().write_async(
             request.header().into_bytes(),
             priority,
             Some(&cancellable.clone()),
             move |result| match result {
-                Ok(_) => {
-                    // Read response
-                    Response::from_connection_async(self, priority, cancellable, move |result| {
-                        callback(match result {
-                            Ok(response) => Ok(response),
-                            Err(e) => Err(Error::Response(e)),
+                Ok(_) => match request {
+                    Request::Gemini(..) => {
+                        Response::from_connection_async(self, priority, cancellable, |result| {
+                            callback(match result {
+                                Ok(response) => Ok(response),
+                                Err(e) => Err(Error::Response(e)),
+                            })
                         })
-                    })
-                }
-                Err((b, e)) => callback(Err(Error::Request((b, e)))),
+                    }
+                    Request::Titan(this) => output_stream.write_bytes_async(
+                        &this.data,
+                        priority,
+                        Some(&cancellable.clone()),
+                        move |result| match result {
+                            Ok(_) => Response::from_connection_async(
+                                self,
+                                priority,
+                                cancellable,
+                                |result| {
+                                    callback(match result {
+                                        Ok(response) => Ok(response),
+                                        Err(e) => Err(Error::Response(e)),
+                                    })
+                                },
+                            ),
+                            Err(e) => callback(Err(Error::Request(e))),
+                        },
+                    ),
+                },
+                Err((_, e)) => callback(Err(Error::Request(e))),
             },
-        );
+        )
     }
 
     // Getters
