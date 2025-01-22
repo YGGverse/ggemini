@@ -58,41 +58,6 @@ impl Connection {
         cancellable: Cancellable,
         callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
-        match request {
-            Request::Gemini(request) => {
-                self.gemini_request_async(request, priority, cancellable, callback)
-            }
-            Request::Titan(request) => {
-                self.titan_request_async(request, priority, cancellable, callback)
-            }
-        }
-    }
-
-    /// Make new request to `Self` connection using
-    /// [Gemini](https://geminiprotocol.net/docs/protocol-specification.gmi) protocol
-    /// * callback with new `Response` on success or `Error` on failure
-    /// * see also `request_async` method to send multi-protocol requests
-    pub fn gemini_request_async(
-        self,
-        request: Gemini,
-        priority: Priority,
-        cancellable: Cancellable,
-        callback: impl FnOnce(Result<Response, Error>) + 'static,
-    ) {
-        self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
-    }
-
-    /// Make new request to `Self` connection using
-    /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol
-    /// * callback with new `Response` on success or `Error` on failure
-    /// * see also `request_async` method to send multi-protocol requests
-    pub fn titan_request_async(
-        self,
-        request: Titan,
-        priority: Priority,
-        cancellable: Cancellable,
-        callback: impl FnOnce(Result<Response, Error>) + 'static,
-    ) {
         self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
     }
 

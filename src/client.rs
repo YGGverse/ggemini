@@ -78,27 +78,15 @@ impl Client {
                                     Some(network_address),
                                     is_session_resumption,
                                 ) {
-                                    Ok(connection) => match request {
-                                        Request::Gemini(request) => connection
-                                            .gemini_request_async(
-                                                request,
-                                                priority,
-                                                cancellable,
-                                                move |result| match result {
-                                                    Ok(response) => callback(Ok(response)),
-                                                    Err(e) => callback(Err(Error::Connection(e))),
-                                                },
-                                            ),
-                                        Request::Titan(request) => connection.titan_request_async(
-                                            request,
-                                            priority,
-                                            cancellable,
-                                            move |result| match result {
-                                                Ok(response) => callback(Ok(response)),
-                                                Err(e) => callback(Err(Error::Connection(e))),
-                                            },
-                                        ),
-                                    },
+                                    Ok(connection) => connection.request_async(
+                                        request,
+                                        priority,
+                                        cancellable,
+                                        move |result| match result {
+                                            Ok(response) => callback(Ok(response)),
+                                            Err(e) => callback(Err(Error::Connection(e))),
+                                        },
+                                    ),
                                     Err(e) => callback(Err(Error::Connection(e))),
                                 }
                             }
