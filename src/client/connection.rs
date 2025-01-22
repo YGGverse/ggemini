@@ -6,13 +6,15 @@ pub use error::Error;
 pub use request::{Gemini, Request, Titan};
 pub use response::Response;
 
+// Local dependencies
+
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::{
     object::{Cast, ObjectExt},
-    Bytes, Priority,
+    Priority,
 };
 
 pub struct Connection {
@@ -58,24 +60,8 @@ impl Connection {
         cancellable: Cancellable,
         callback: impl FnOnce(Result<Response, Error>) + 'static,
     ) {
-        self.bytes_request_async(&request.to_bytes(), priority, cancellable, callback);
-    }
-
-    /// Low-level shared method to send raw bytes array over
-    /// [Gemini](https://geminiprotocol.net/docs/protocol-specification.gmi) or
-    /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol
-    /// * bytes array should include formatted header according to protocol selected
-    /// * for high-level requests see `gemini_request_async` and `titan_request_async` methods
-    /// * to construct multi-protocol request with single function, use `request_async` method
-    pub fn bytes_request_async(
-        self,
-        request: &Bytes,
-        priority: Priority,
-        cancellable: Cancellable,
-        callback: impl FnOnce(Result<Response, Error>) + 'static,
-    ) {
-        self.stream().output_stream().write_bytes_async(
-            request,
+        self.stream().output_stream().write_async(
+            request.header().into_bytes(),
             priority,
             Some(&cancellable.clone()),
             move |result| match result {
@@ -88,7 +74,7 @@ impl Connection {
                         })
                     })
                 }
-                Err(e) => callback(Err(Error::Stream(e))),
+                Err((b, e)) => callback(Err(Error::Request((b, e)))),
             },
         );
     }

@@ -3,7 +3,7 @@ use glib::{Bytes, Uri, UriHideFlags};
 /// [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) protocol enum object for `Request`
 pub struct Titan {
     pub uri: Uri,
-    pub data: Vec<u8>,
+    pub data: Bytes,
     pub mime: Option<String>,
     pub token: Option<String>,
 }
@@ -11,8 +11,8 @@ pub struct Titan {
 impl Titan {
     // Getters
 
-    /// Copy `Self` to [Bytes](https://docs.gtk.org/glib/struct.Bytes.html)
-    pub fn to_bytes(&self) -> Bytes {
+    /// Get header string for `Self`
+    pub fn header(&self) -> String {
         // Calculate data size
         let size = self.data.len();
 
@@ -31,13 +31,6 @@ impl Titan {
             header.push_str(&format!("?{query}"));
         }
         header.push_str("\r\n");
-
-        // Build request
-        let mut bytes: Vec<u8> = Vec::with_capacity(size + 1024); // @TODO
-        bytes.extend(header.into_bytes());
-        bytes.extend(&self.data);
-
-        // Wrap result
-        Bytes::from(&bytes)
+        header
     }
 }

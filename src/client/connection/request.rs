@@ -7,7 +7,6 @@ pub use gemini::Gemini;
 pub use titan::Titan;
 
 use gio::NetworkAddress;
-use glib::{Bytes, Uri};
 
 /// Single `Request` implementation for different protocols
 pub enum Request {
@@ -16,30 +15,13 @@ pub enum Request {
 }
 
 impl Request {
-    // Constructors
-
-    /// Create new `Self` for [Gemini protocol](https://geminiprotocol.net)
-    pub fn gemini(uri: Uri) -> Self {
-        Self::Gemini(Gemini { uri })
-    }
-
-    /// Create new `Self` for [Titan protocol](gemini://transjovian.org/titan/page/The%20Titan%20Specification)
-    pub fn titan(uri: Uri, data: Vec<u8>, mime: Option<String>, token: Option<String>) -> Self {
-        Self::Titan(Titan {
-            uri,
-            data,
-            mime,
-            token,
-        })
-    }
-
     // Getters
 
-    /// Get [Bytes](https://docs.gtk.org/glib/struct.Bytes.html) for `Self`
-    pub fn to_bytes(&self) -> Bytes {
+    /// Get header string for `Self`
+    pub fn header(&self) -> String {
         match self {
-            Self::Gemini(ref request) => request.to_bytes(),
-            Self::Titan(ref request) => request.to_bytes(),
+            Self::Gemini(ref this) => this.header(),
+            Self::Titan(ref this) => this.header(),
         }
     }
 
