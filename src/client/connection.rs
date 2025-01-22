@@ -25,7 +25,7 @@ impl Connection {
     // Constructors
 
     /// Create new `Self`
-    pub fn new(
+    pub fn build(
         socket_connection: SocketConnection,
         certificate: Option<TlsCertificate>,
         server_identity: Option<NetworkAddress>,

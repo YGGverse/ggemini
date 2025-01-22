@@ -72,7 +72,7 @@ impl Client {
                         let is_session_resumption = self.is_session_resumption;
                         move |result| match result {
                             Ok(socket_connection) => {
-                                match Connection::new(
+                                match Connection::build(
                                     socket_connection,
                                     certificate,
                                     Some(network_address),
