@@ -63,24 +63,22 @@ fn main() -> ExitCode {
             Ok(response) => {
                 // route by status code
                 match response.meta.status {
-                    // is code 20, handle `GIOStream` by content type
+                    // code 20, handle `GIOStream` by content type
                     Status::Success => match response.meta.mime.unwrap().value.as_str() {
-                        // is gemtext, see ggemtext crate to parse
+                        // gemtext, see ggemtext crate to parse
                         "text/gemini" => todo!(),
-                        // other types
+                        // other content types
                         _ => todo!(),
                     },
                     _ => todo!(),
                 }
             }
-            Err(e) => todo!("{e}"),
+            Err(_) => todo!(),
         },
     );
     ExitCode::SUCCESS
 }
 ```
-
-* to send requests using Titan protocol, see `titan_request_async` implementation
 
 ## Other crates
 
