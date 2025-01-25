@@ -13,13 +13,10 @@ impl Titan {
 
     /// Get header string for `Self`
     pub fn header(&self) -> String {
-        // Calculate data size
-        let size = self.data.len();
-
-        // Build header
         let mut header = format!(
-            "{};size={size}",
-            self.uri.to_string_partial(UriHideFlags::QUERY)
+            "{};size={}",
+            self.uri.to_string_partial(UriHideFlags::QUERY),
+            self.data.len()
         );
         if let Some(ref mime) = self.mime {
             header.push_str(&format!(";mime={mime}"));
