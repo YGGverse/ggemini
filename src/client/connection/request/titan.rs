@@ -1,15 +1,11 @@
 use glib::{Bytes, Uri, UriHideFlags};
 
-/// Optionally use this value by default for the text input
-pub const DEFAULT_MIME: &str = "text/gemini";
-
 /// Formatted [Titan](gemini://transjovian.org/titan/page/The%20Titan%20Specification) `Request`
 pub struct Titan {
     pub uri: Uri,
     pub data: Bytes,
-    /// MIME type is optional argument by Titan protocol specification,
-    /// but server MAY reject the request without `mime` value provided
-    /// * see also `DEFAULT_MIME`
+    /// MIME type is optional attribute by Titan protocol specification,
+    /// but server MAY reject the request without `mime` value provided.
     pub mime: Option<String>,
     pub token: Option<String>,
 }
