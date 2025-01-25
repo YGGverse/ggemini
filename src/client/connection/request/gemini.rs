@@ -13,3 +13,18 @@ impl Gemini {
         format!("{}\r\n", self.uri)
     }
 }
+
+#[test]
+fn header() {
+    use super::{super::Request, Gemini};
+    use glib::UriFlags;
+
+    const REQUEST: &str = "gemini://geminiprotocol.net/";
+    assert_eq!(
+        Request::Gemini(Gemini {
+            uri: Uri::parse(REQUEST, UriFlags::NONE).unwrap()
+        })
+        .header(),
+        format!("{REQUEST}\r\n")
+    );
+}

@@ -31,3 +31,31 @@ impl Titan {
         header
     }
 }
+
+#[test]
+fn header() {
+    use super::{super::Request, Titan};
+    use glib::UriFlags;
+
+    const DATA: &[u8] = &[1, 2, 3];
+    const MIME: &str = "plain/text";
+    const TOKEN: &str = "token";
+
+    assert_eq!(
+        Request::Titan(Titan {
+            uri: Uri::parse(
+                "titan://geminiprotocol.net/raw/path?key=value",
+                UriFlags::NONE
+            )
+            .unwrap(),
+            data: Bytes::from(DATA),
+            mime: Some(MIME.to_string()),
+            token: Some(TOKEN.to_string())
+        })
+        .header(),
+        format!(
+            "titan://geminiprotocol.net/raw/path;size={};mime={MIME};token={TOKEN}?key=value\r\n",
+            DATA.len(),
+        )
+    );
+}
