@@ -53,7 +53,7 @@ use ggemini::client::{
 
 fn main() -> ExitCode {
     Client::new().request_async(
-        Request::gemini(
+        Request::gemini( // or `Request::titan`
             Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap(),
         ),
         Priority::DEFAULT,
