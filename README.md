@@ -45,7 +45,6 @@ use glib::*;
 use ggemini::client::{
     connection::{
         Request, Response,
-        request::Gemini,
         response::meta::{Mime, Status}
     },
     Client, Error,
