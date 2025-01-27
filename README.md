@@ -53,9 +53,9 @@ use ggemini::client::{
 
 fn main() -> ExitCode {
     Client::new().request_async(
-        Request::gemini( // or `Request::titan`
-            Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap(),
-        ),
+        Request::Gemini { // or `Request::Titan`
+            uri: Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap(),
+        },
         Priority::DEFAULT,
         Cancellable::new(),
         None, // optional `GTlsCertificate`

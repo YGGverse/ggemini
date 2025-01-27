@@ -3,7 +3,7 @@ pub mod request;
 pub mod response;
 
 pub use error::Error;
-pub use request::{Gemini, Request, Titan};
+pub use request::Request;
 pub use response::Response;
 
 // Local dependencies
@@ -67,7 +67,7 @@ impl Connection {
             Some(&cancellable.clone()),
             move |result| match result {
                 Ok(_) => match request {
-                    Request::Gemini(..) => {
+                    Request::Gemini { .. } => {
                         Response::from_connection_async(self, priority, cancellable, |result| {
                             callback(match result {
                                 Ok(response) => Ok(response),
@@ -75,8 +75,8 @@ impl Connection {
                             })
                         })
                     }
-                    Request::Titan(this) => output_stream.write_bytes_async(
-                        &this.data,
+                    Request::Titan { data, .. } => output_stream.write_bytes_async(
+                        &data,
                         priority,
                         Some(&cancellable.clone()),
                         move |result| match result {
