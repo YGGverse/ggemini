@@ -63,7 +63,7 @@ fn main() -> ExitCode {
                 // route by status code
                 match response.meta.status {
                     // code 20, handle `GIOStream` by content type
-                    Status::Success => match response.meta.mime.unwrap().value.as_str() {
+                    Status::Success => match response.meta.mime.unwrap().as_str() {
                         // gemtext, see ggemtext crate to parse
                         "text/gemini" => todo!(),
                         // other content types
