@@ -48,27 +48,27 @@ impl Response {
                     match result {
                         Ok(buffer) => match buffer.first() {
                             Some(byte) => match byte {
-                                1 => match Input::from_utf8(&buffer) {
+                                0x31 => match Input::from_utf8(&buffer) {
                                     Ok(input) => Ok(Self::Input(input)),
                                     Err(e) => Err(Error::Input(e)),
                                 },
-                                2 => match Success::from_utf8(&buffer) {
+                                0x32 => match Success::from_utf8(&buffer) {
                                     Ok(success) => Ok(Self::Success(success)),
                                     Err(e) => Err(Error::Success(e)),
                                 },
-                                3 => match Redirect::from_utf8(&buffer) {
+                                0x33 => match Redirect::from_utf8(&buffer) {
                                     Ok(redirect) => Ok(Self::Redirect(redirect)),
                                     Err(e) => Err(Error::Redirect(e)),
                                 },
-                                4 | 5 => match Failure::from_utf8(&buffer) {
+                                0x34 | 0x35 => match Failure::from_utf8(&buffer) {
                                     Ok(failure) => Ok(Self::Failure(failure)),
                                     Err(e) => Err(Error::Failure(e)),
                                 },
-                                6 => match Certificate::from_utf8(&buffer) {
+                                0x36 => match Certificate::from_utf8(&buffer) {
                                     Ok(certificate) => Ok(Self::Certificate(certificate)),
                                     Err(e) => Err(Error::Certificate(e)),
                                 },
-                                b => Err(Error::Code(*b)),
+                                _ => Err(Error::Code),
                             },
                             None => Err(Error::Protocol),
                         },

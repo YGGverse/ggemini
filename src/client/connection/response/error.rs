@@ -6,7 +6,7 @@ use std::{
 #[derive(Debug)]
 pub enum Error {
     Certificate(super::certificate::Error),
-    Code(u8),
+    Code,
     Failure(super::failure::Error),
     Input(super::input::Error),
     Protocol,
@@ -22,8 +22,8 @@ impl Display for Error {
             Self::Certificate(e) => {
                 write!(f, "Certificate error: {e}")
             }
-            Self::Code(e) => {
-                write!(f, "Code group error: {e}*")
+            Self::Code => {
+                write!(f, "Code group error")
             }
             Self::Failure(e) => {
                 write!(f, "Failure error: {e}")
