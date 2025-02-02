@@ -64,13 +64,13 @@ impl std::fmt::Display for Permanent {
             f,
             "{}",
             match self {
-                Self::Default { message } => message.as_deref().unwrap_or(DEFAULT.1),
-                Self::NotFound { message } => message.as_deref().unwrap_or(NOT_FOUND.1),
-                Self::Gone { message } => message.as_deref().unwrap_or(GONE.1),
-                Self::ProxyRequestRefused { message } =>
-                    message.as_deref().unwrap_or(PROXY_REQUEST_REFUSED.1),
-                Self::BadRequest { message } => message.as_deref().unwrap_or(BAD_REQUEST.1),
+                Self::Default { .. } => DEFAULT,
+                Self::NotFound { .. } => NOT_FOUND,
+                Self::Gone { .. } => GONE,
+                Self::ProxyRequestRefused { .. } => PROXY_REQUEST_REFUSED,
+                Self::BadRequest { .. } => BAD_REQUEST,
             }
+            .1
         )
     }
 }
@@ -126,44 +126,54 @@ fn test_from_str() {
     let default = Permanent::from_str("50 Message\r\n").unwrap();
     assert_eq!(default.message(), Some("Message"));
     assert_eq!(default.to_code(), DEFAULT.0);
+    assert_eq!(default.to_string(), DEFAULT.1);
 
     let default = Permanent::from_str("50\r\n").unwrap();
     assert_eq!(default.message(), None);
     assert_eq!(default.to_code(), DEFAULT.0);
+    assert_eq!(default.to_string(), DEFAULT.1);
 
     // 51
     let not_found = Permanent::from_str("51 Message\r\n").unwrap();
     assert_eq!(not_found.message(), Some("Message"));
     assert_eq!(not_found.to_code(), NOT_FOUND.0);
+    assert_eq!(not_found.to_string(), NOT_FOUND.1);
 
     let not_found = Permanent::from_str("51\r\n").unwrap();
     assert_eq!(not_found.message(), None);
     assert_eq!(not_found.to_code(), NOT_FOUND.0);
+    assert_eq!(not_found.to_string(), NOT_FOUND.1);
 
     // 52
     let gone = Permanent::from_str("52 Message\r\n").unwrap();
     assert_eq!(gone.message(), Some("Message"));
     assert_eq!(gone.to_code(), GONE.0);
+    assert_eq!(gone.to_string(), GONE.1);
 
     let gone = Permanent::from_str("52\r\n").unwrap();
     assert_eq!(gone.message(), None);
     assert_eq!(gone.to_code(), GONE.0);
+    assert_eq!(gone.to_string(), GONE.1);
 
     // 53
     let proxy_request_refused = Permanent::from_str("53 Message\r\n").unwrap();
     assert_eq!(proxy_request_refused.message(), Some("Message"));
     assert_eq!(proxy_request_refused.to_code(), PROXY_REQUEST_REFUSED.0);
+    assert_eq!(proxy_request_refused.to_string(), PROXY_REQUEST_REFUSED.1);
 
     let proxy_request_refused = Permanent::from_str("53\r\n").unwrap();
     assert_eq!(proxy_request_refused.message(), None);
     assert_eq!(proxy_request_refused.to_code(), PROXY_REQUEST_REFUSED.0);
+    assert_eq!(proxy_request_refused.to_string(), PROXY_REQUEST_REFUSED.1);
 
     // 59
     let bad_request = Permanent::from_str("59 Message\r\n").unwrap();
     assert_eq!(bad_request.message(), Some("Message"));
     assert_eq!(bad_request.to_code(), BAD_REQUEST.0);
+    assert_eq!(bad_request.to_string(), BAD_REQUEST.1);
 
     let bad_request = Permanent::from_str("59\r\n").unwrap();
     assert_eq!(bad_request.message(), None);
     assert_eq!(bad_request.to_code(), BAD_REQUEST.0);
+    assert_eq!(bad_request.to_string(), BAD_REQUEST.1);
 }

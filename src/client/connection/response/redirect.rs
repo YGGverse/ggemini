@@ -3,8 +3,8 @@ pub use error::Error;
 
 use glib::GStringPtr;
 
-const TEMPORARY: u8 = 30;
-const PERMANENT: u8 = 31;
+const TEMPORARY: (u8, &str) = (30, "Temporary redirect");
+const PERMANENT: (u8, &str) = (31, "Permanent redirect");
 
 pub enum Redirect {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-30-temporary-redirection
@@ -32,6 +32,7 @@ impl Redirect {
             Self::Permanent { .. } => PERMANENT,
             Self::Temporary { .. } => TEMPORARY,
         }
+        .0
     }
 
     // Getters
@@ -50,9 +51,10 @@ impl std::fmt::Display for Redirect {
             f,
             "{}",
             match self {
-                Self::Permanent { target } => format!("Permanent redirection to `{target}`"),
-                Self::Temporary { target } => format!("Temporary redirection to `{target}`"),
+                Self::Permanent { .. } => PERMANENT,
+                Self::Temporary { .. } => TEMPORARY,
             }
+            .1
         )
     }
 }
@@ -104,9 +106,11 @@ fn test_from_str() {
 
     let temporary = Redirect::from_str("30 /uri\r\n").unwrap();
     assert_eq!(temporary.target(), "/uri");
-    assert_eq!(temporary.to_code(), TEMPORARY);
+    assert_eq!(temporary.to_code(), TEMPORARY.0);
+    assert_eq!(temporary.to_string(), TEMPORARY.1);
 
     let permanent = Redirect::from_str("31 /uri\r\n").unwrap();
     assert_eq!(permanent.target(), "/uri");
-    assert_eq!(permanent.to_code(), PERMANENT);
+    assert_eq!(permanent.to_code(), PERMANENT.0);
+    assert_eq!(permanent.to_string(), PERMANENT.1);
 }

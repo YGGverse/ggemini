@@ -46,9 +46,10 @@ impl std::fmt::Display for Input {
             f,
             "{}",
             match self {
-                Self::Default { message } => message.as_deref().unwrap_or(DEFAULT.1),
-                Self::Sensitive { message } => message.as_deref().unwrap_or(SENSITIVE.1),
+                Self::Default { .. } => DEFAULT,
+                Self::Sensitive { .. } => SENSITIVE,
             }
+            .1
         )
     }
 }
@@ -87,23 +88,23 @@ fn test_from_str() {
 
     // 10
     let default = Input::from_str("10 Default\r\n").unwrap();
-    assert_eq!(default.to_code(), DEFAULT.0);
     assert_eq!(default.message(), Some("Default"));
-    assert_eq!(default.to_string(), "Default");
+    assert_eq!(default.to_code(), DEFAULT.0);
+    assert_eq!(default.to_string(), DEFAULT.1);
 
     let default = Input::from_str("10\r\n").unwrap();
-    assert_eq!(default.to_code(), DEFAULT.0);
     assert_eq!(default.message(), None);
+    assert_eq!(default.to_code(), DEFAULT.0);
     assert_eq!(default.to_string(), DEFAULT.1);
 
     // 11
     let sensitive = Input::from_str("11 Sensitive\r\n").unwrap();
-    assert_eq!(sensitive.to_code(), SENSITIVE.0);
     assert_eq!(sensitive.message(), Some("Sensitive"));
-    assert_eq!(sensitive.to_string(), "Sensitive");
+    assert_eq!(sensitive.to_code(), SENSITIVE.0);
+    assert_eq!(sensitive.to_string(), SENSITIVE.1);
 
     let sensitive = Input::from_str("11\r\n").unwrap();
-    assert_eq!(sensitive.to_code(), SENSITIVE.0);
     assert_eq!(sensitive.message(), None);
+    assert_eq!(sensitive.to_code(), SENSITIVE.0);
     assert_eq!(sensitive.to_string(), SENSITIVE.1);
 }

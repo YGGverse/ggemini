@@ -55,10 +55,11 @@ impl std::fmt::Display for Certificate {
             f,
             "{}",
             match self {
-                Self::Required { message } => message.as_deref().unwrap_or(REQUIRED.1),
-                Self::NotAuthorized { message } => message.as_deref().unwrap_or(NOT_AUTHORIZED.1),
-                Self::NotValid { message } => message.as_deref().unwrap_or(NOT_VALID.1),
+                Self::Required { .. } => REQUIRED,
+                Self::NotAuthorized { .. } => NOT_AUTHORIZED,
+                Self::NotValid { .. } => NOT_VALID,
             }
+            .1
         )
     }
 }
@@ -104,6 +105,7 @@ fn test_from_str() {
 
     assert_eq!(required.message(), Some("Message"));
     assert_eq!(required.to_code(), REQUIRED.0);
+    assert_eq!(required.to_string(), REQUIRED.1);
 
     let required = Certificate::from_str("60\r\n").unwrap();
 
