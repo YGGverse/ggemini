@@ -1,23 +1,26 @@
-use std::fmt::{Display, Formatter, Result};
+use std::{
+    fmt::{Display, Formatter, Result},
+    str::Utf8Error,
+};
 
 #[derive(Debug)]
 pub enum Error {
-    Decode(std::str::Utf8Error),
     Protocol,
-    Undefined,
+    Mime,
+    Utf8Error(Utf8Error),
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
-            Self::Decode(e) => {
-                write!(f, "Decode error: {e}")
+            Self::Utf8Error(e) => {
+                write!(f, "UTF-8 error: {e}")
             }
             Self::Protocol => {
                 write!(f, "Protocol error")
             }
-            Self::Undefined => {
-                write!(f, "Undefined")
+            Self::Mime => {
+                write!(f, "MIME error")
             }
         }
     }
