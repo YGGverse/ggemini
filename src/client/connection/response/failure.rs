@@ -22,11 +22,11 @@ impl Failure {
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match buffer.first() {
             Some(byte) => match byte {
-                0x34 => match Temporary::from_utf8(buffer) {
+                b'4' => match Temporary::from_utf8(buffer) {
                     Ok(input) => Ok(Self::Temporary(input)),
                     Err(e) => Err(Error::Temporary(e)),
                 },
-                0x35 => match Permanent::from_utf8(buffer) {
+                b'5' => match Permanent::from_utf8(buffer) {
                     Ok(failure) => Ok(Self::Permanent(failure)),
                     Err(e) => Err(Error::Permanent(e)),
                 },

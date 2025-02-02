@@ -1,5 +1,3 @@
-//! Read and parse Gemini response as Object
-
 pub mod certificate;
 pub mod data; // @TODO deprecated
 pub mod error;
@@ -19,7 +17,7 @@ use super::Connection;
 use gio::{Cancellable, IOStream};
 use glib::{object::IsA, Priority};
 
-const HEADER_LEN: usize = 0x400; // 1024
+const HEADER_LEN: usize = 1024;
 
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#responses
 pub enum Response {
@@ -48,23 +46,23 @@ impl Response {
                     match result {
                         Ok(buffer) => match buffer.first() {
                             Some(byte) => match byte {
-                                0x31 => match Input::from_utf8(&buffer) {
+                                b'1' => match Input::from_utf8(&buffer) {
                                     Ok(input) => Ok(Self::Input(input)),
                                     Err(e) => Err(Error::Input(e)),
                                 },
-                                0x32 => match Success::from_utf8(&buffer) {
+                                b'2' => match Success::from_utf8(&buffer) {
                                     Ok(success) => Ok(Self::Success(success)),
                                     Err(e) => Err(Error::Success(e)),
                                 },
-                                0x33 => match Redirect::from_utf8(&buffer) {
+                                b'3' => match Redirect::from_utf8(&buffer) {
                                     Ok(redirect) => Ok(Self::Redirect(redirect)),
                                     Err(e) => Err(Error::Redirect(e)),
                                 },
-                                0x34 | 0x35 => match Failure::from_utf8(&buffer) {
+                                b'4' | b'5' => match Failure::from_utf8(&buffer) {
                                     Ok(failure) => Ok(Self::Failure(failure)),
                                     Err(e) => Err(Error::Failure(e)),
                                 },
-                                0x36 => match Certificate::from_utf8(&buffer) {
+                                b'6' => match Certificate::from_utf8(&buffer) {
                                     Ok(certificate) => Ok(Self::Certificate(certificate)),
                                     Err(e) => Err(Error::Certificate(e)),
                                 },
