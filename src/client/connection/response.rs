@@ -36,7 +36,7 @@ impl Response {
         connection: Connection,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl FnOnce(Result<Self, Error>) + 'static,
+        callback: impl FnOnce(Result<Self, Error>, Connection) + 'static,
     ) {
         from_stream_async(
             Vec::with_capacity(HEADER_LEN),
@@ -44,35 +44,38 @@ impl Response {
             cancellable,
             priority,
             |result| {
-                callback(match result {
-                    Ok(buffer) => match buffer.first() {
-                        Some(byte) => match byte {
-                            1 => match Input::from_utf8(&buffer) {
-                                Ok(input) => Ok(Self::Input(input)),
-                                Err(e) => Err(Error::Input(e)),
+                callback(
+                    match result {
+                        Ok(buffer) => match buffer.first() {
+                            Some(byte) => match byte {
+                                1 => match Input::from_utf8(&buffer) {
+                                    Ok(input) => Ok(Self::Input(input)),
+                                    Err(e) => Err(Error::Input(e)),
+                                },
+                                2 => match Success::from_utf8(&buffer) {
+                                    Ok(success) => Ok(Self::Success(success)),
+                                    Err(e) => Err(Error::Success(e)),
+                                },
+                                3 => match Redirect::from_utf8(&buffer) {
+                                    Ok(redirect) => Ok(Self::Redirect(redirect)),
+                                    Err(e) => Err(Error::Redirect(e)),
+                                },
+                                4 | 5 => match Failure::from_utf8(&buffer) {
+                                    Ok(failure) => Ok(Self::Failure(failure)),
+                                    Err(e) => Err(Error::Failure(e)),
+                                },
+                                6 => match Certificate::from_utf8(&buffer) {
+                                    Ok(certificate) => Ok(Self::Certificate(certificate)),
+                                    Err(e) => Err(Error::Certificate(e)),
+                                },
+                                b => Err(Error::Code(*b)),
                             },
-                            2 => match Success::from_utf8(&buffer) {
-                                Ok(success) => Ok(Self::Success(success)),
-                                Err(e) => Err(Error::Success(e)),
-                            },
-                            3 => match Redirect::from_utf8(&buffer) {
-                                Ok(redirect) => Ok(Self::Redirect(redirect)),
-                                Err(e) => Err(Error::Redirect(e)),
-                            },
-                            4 | 5 => match Failure::from_utf8(&buffer) {
-                                Ok(failure) => Ok(Self::Failure(failure)),
-                                Err(e) => Err(Error::Failure(e)),
-                            },
-                            6 => match Certificate::from_utf8(&buffer) {
-                                Ok(certificate) => Ok(Self::Certificate(certificate)),
-                                Err(e) => Err(Error::Certificate(e)),
-                            },
-                            b => Err(Error::Code(*b)),
+                            None => Err(Error::Protocol),
                         },
-                        None => Err(Error::Protocol),
+                        Err(e) => Err(e),
                     },
-                    Err(e) => Err(e),
-                })
+                    connection,
+                )
             },
         );
     }

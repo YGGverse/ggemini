@@ -58,7 +58,7 @@ impl Connection {
         request: Request,
         priority: Priority,
         cancellable: Cancellable,
-        callback: impl FnOnce(Result<Response, Error>) + 'static,
+        callback: impl FnOnce(Result<(Response, Self), Error>) + 'static,
     ) {
         let output_stream = self.stream().output_stream();
         output_stream.clone().write_async(
@@ -67,14 +67,17 @@ impl Connection {
             Some(&cancellable.clone()),
             move |result| match result {
                 Ok(_) => match request {
-                    Request::Gemini { .. } => {
-                        Response::from_connection_async(self, priority, cancellable, |result| {
+                    Request::Gemini { .. } => Response::from_connection_async(
+                        self,
+                        priority,
+                        cancellable,
+                        |result, connection| {
                             callback(match result {
-                                Ok(response) => Ok(response),
+                                Ok(response) => Ok((response, connection)),
                                 Err(e) => Err(Error::Response(e)),
                             })
-                        })
-                    }
+                        },
+                    ),
                     Request::Titan { data, .. } => output_stream.write_bytes_async(
                         &data,
                         priority,
@@ -84,9 +87,9 @@ impl Connection {
                                 self,
                                 priority,
                                 cancellable,
-                                |result| {
+                                |result, connection| {
                                     callback(match result {
-                                        Ok(response) => Ok(response),
+                                        Ok(response) => Ok((response, connection)),
                                         Err(e) => Err(Error::Response(e)),
                                     })
                                 },
