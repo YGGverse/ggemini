@@ -152,8 +152,8 @@ fn test_to_uri() {
         Some("geminiprotocol.net"),
         -1,
         "/path/",
-        Some("?query"),
-        Some("?fragment"),
+        Some("query"),
+        Some("fragment"),
     );
 
     let resolve = Redirect::from_str("30 /uri\r\n").unwrap();
