@@ -1,7 +1,7 @@
 pub mod error;
 pub use error::Error;
 
-use glib::GStringPtr;
+use glib::{GStringPtr, Uri, UriFlags};
 
 const TEMPORARY: (u8, &str) = (30, "Temporary redirect");
 const PERMANENT: (u8, &str) = (31, "Permanent redirect");
@@ -33,6 +33,32 @@ impl Redirect {
             Self::Temporary { .. } => TEMPORARY,
         }
         .0
+    }
+
+    /// Resolve [specification-compatible](https://geminiprotocol.net/docs/protocol-specification.gmi#redirection),
+    /// absolute [Uri](https://docs.gtk.org/glib/struct.Uri.html) for `target` using `base`
+    /// * fragment implementation uncompleted @TODO
+    pub fn to_uri(&self, base: &Uri) -> Result<Uri, Error> {
+        match Uri::build(
+            UriFlags::NONE,
+            base.scheme().as_str(),
+            None, // unexpected
+            base.host().as_deref(),
+            base.port(),
+            base.path().as_str(),
+            // > If a server sends a redirection in response to a request with a query string,
+            // > the client MUST NOT apply the query string to the new location
+            None,
+            // > A server SHOULD NOT include fragments in redirections,
+            // > but if one is given, and a client already has a fragment it could apply (from the original URI),
+            // > it is up to the client which fragment to apply.
+            None, // @TODO
+        )
+        .parse_relative(self.target(), UriFlags::NONE)
+        {
+            Ok(absolute) => Ok(absolute),
+            Err(e) => Err(Error::Glib(e)),
+        }
     }
 
     // Getters
@@ -113,4 +139,38 @@ fn test_from_str() {
     assert_eq!(permanent.target(), "/uri");
     assert_eq!(permanent.to_code(), PERMANENT.0);
     assert_eq!(permanent.to_string(), PERMANENT.1);
+}
+
+#[test]
+fn test_to_uri() {
+    use std::str::FromStr;
+
+    let request = Uri::build(
+        UriFlags::NONE,
+        "gemini",
+        None,
+        Some("geminiprotocol.net"),
+        -1,
+        "/path/",
+        Some("?query"),
+        Some("?fragment"),
+    );
+
+    let resolve = Redirect::from_str("30 /uri\r\n").unwrap();
+    assert_eq!(
+        resolve.to_uri(&request).unwrap().to_string(),
+        "gemini://geminiprotocol.net/uri"
+    );
+
+    let resolve = Redirect::from_str("30 uri\r\n").unwrap();
+    assert_eq!(
+        resolve.to_uri(&request).unwrap().to_string(),
+        "gemini://geminiprotocol.net/path/uri"
+    );
+
+    let resolve = Redirect::from_str("30 gemini://test.host/uri\r\n").unwrap();
+    assert_eq!(
+        resolve.to_uri(&request).unwrap().to_string(),
+        "gemini://test.host/uri"
+    );
 }
