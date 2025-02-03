@@ -15,19 +15,19 @@ use glib::{object::IsA, Priority};
 /// * calculate bytes processed on chunk load
 pub fn from_stream_async(
     io_stream: impl IsA<IOStream>,
-    cancelable: Cancellable,
     priority: Priority,
+    cancelable: Cancellable,
     (chunk, limit): (usize, usize),
     (on_chunk, on_complete): (
         impl Fn(usize, usize) + 'static,
         impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static,
     ),
 ) {
-    move_all_from_stream_async(
-        io_stream,
+    for_memory_input_stream_async(
         MemoryInputStream::new(),
-        cancelable,
+        io_stream,
         priority,
+        cancelable,
         (chunk, limit, 0),
         (on_chunk, on_complete),
     );
@@ -36,11 +36,11 @@ pub fn from_stream_async(
 /// Asynchronously move all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 /// to [MemoryInputStream](https://docs.gtk.org/gio/class.MemoryInputStream.html)
 /// * require `IOStream` reference to keep `Connection` active in async thread
-pub fn move_all_from_stream_async(
-    io_stream: impl IsA<IOStream>,
+pub fn for_memory_input_stream_async(
     memory_input_stream: MemoryInputStream,
-    cancellable: Cancellable,
+    io_stream: impl IsA<IOStream>,
     priority: Priority,
+    cancellable: Cancellable,
     (chunk, limit, mut total): (usize, usize, usize),
     (on_chunk, on_complete): (
         impl Fn(usize, usize) + 'static,
@@ -67,14 +67,14 @@ pub fn move_all_from_stream_async(
                 memory_input_stream.add_bytes(&bytes);
 
                 // continue reading..
-                move_all_from_stream_async(
-                    io_stream,
+                for_memory_input_stream_async(
                     memory_input_stream,
-                    cancellable,
+                    io_stream,
                     priority,
+                    cancellable,
                     (chunk, limit, total),
                     (on_chunk, on_complete),
-                );
+                )
             }
             Err(e) => {
                 on_complete(Err(Error::InputStream(e)));
