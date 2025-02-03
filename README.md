@@ -42,12 +42,10 @@ cargo add ggemini
 use gio::*;
 use glib::*;
 
+
 use ggemini::client::{
-    connection::{
-        Request, Response,
-        response::meta::{Mime, Status}
-    },
-    Client, Error,
+    connection::{response::Success, Request, Response},
+    Client,
 };
 
 fn main() -> ExitCode {
@@ -58,20 +56,17 @@ fn main() -> ExitCode {
         Priority::DEFAULT,
         Cancellable::new(),
         None, // optional `GTlsCertificate`
-        |result: Result<Response, Error>| match result {
-            Ok(response) => {
-                // route by status code
-                match response.meta.status {
-                    // code 20, handle `GIOStream` by content type
-                    Status::Success => match response.meta.mime.unwrap().as_str() {
-                        // gemtext, see ggemtext crate to parse
+        |result| match result {
+            Ok((response, _connection)) => match response {
+                Response::Success(success) => match success {
+                    Success::Default { mime } => match mime.as_str() {
                         "text/gemini" => todo!(),
-                        // other content types
                         _ => todo!(),
                     },
                     _ => todo!(),
-                }
-            }
+                },
+                _ => todo!(),
+            },
             Err(_) => todo!(),
         },
     );
