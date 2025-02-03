@@ -10,49 +10,40 @@ use glib::{object::IsA, Bytes, Priority};
 /// Asynchronously move all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 /// to [FileOutputStream](https://docs.gtk.org/gio/class.FileOutputStream.html)
 /// * require `IOStream` reference to keep `Connection` active in async thread
-pub fn move_all_from_stream_async(
-    base_io_stream: impl IsA<IOStream>,
+pub fn from_stream_async(
+    io_stream: impl IsA<IOStream>,
     file_output_stream: FileOutputStream,
     cancellable: Cancellable,
     priority: Priority,
-    bytes: (
+    (chunk, limit, mut total): (
         usize,         // bytes_in_chunk
         Option<usize>, // bytes_total_limit, `None` to unlimited
         usize,         // bytes_total
     ),
-    callback: (
+    (on_chunk, on_complete): (
         impl Fn(Bytes, usize) + 'static, // on_chunk
         impl FnOnce(Result<(FileOutputStream, usize), Error>) + 'static, // on_complete
     ),
 ) {
-    let (on_chunk, on_complete) = callback;
-    let (bytes_in_chunk, bytes_total_limit, bytes_total) = bytes;
-
-    base_io_stream.input_stream().read_bytes_async(
-        bytes_in_chunk,
+    io_stream.input_stream().read_bytes_async(
+        chunk,
         priority,
         Some(&cancellable.clone()),
         move |result| match result {
             Ok(bytes) => {
-                // Update bytes total
-                let bytes_total = bytes_total + bytes.len();
+                total += bytes.len();
+                on_chunk(bytes.clone(), total);
 
-                // Callback chunk function
-                on_chunk(bytes.clone(), bytes_total);
-
-                // Validate max size
-                if let Some(bytes_total_limit) = bytes_total_limit {
-                    if bytes_total > bytes_total_limit {
-                        return on_complete(Err(Error::BytesTotal(bytes_total, bytes_total_limit)));
+                if let Some(limit) = limit {
+                    if total > limit {
+                        return on_complete(Err(Error::BytesTotal(total, limit)));
                     }
                 }
 
-                // No bytes were read, end of stream
                 if bytes.len() == 0 {
-                    return on_complete(Ok((file_output_stream, bytes_total)));
+                    return on_complete(Ok((file_output_stream, total)));
                 }
 
-                // Write chunk bytes
                 file_output_stream.clone().write_async(
                     bytes.clone(),
                     priority,
@@ -60,13 +51,13 @@ pub fn move_all_from_stream_async(
                     move |result| {
                         match result {
                             Ok(_) => {
-                                // Continue
-                                move_all_from_stream_async(
-                                    base_io_stream,
+                                // continue read..
+                                from_stream_async(
+                                    io_stream,
                                     file_output_stream,
                                     cancellable,
                                     priority,
-                                    (bytes_in_chunk, bytes_total_limit, bytes_total),
+                                    (chunk, limit, total),
                                     (on_chunk, on_complete),
                                 );
                             }
@@ -77,9 +68,7 @@ pub fn move_all_from_stream_async(
                     },
                 );
             }
-            Err(e) => {
-                on_complete(Err(Error::InputStream(e)));
-            }
+            Err(e) => on_complete(Err(Error::InputStream(e))),
         },
-    );
+    )
 }
