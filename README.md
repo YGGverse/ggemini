@@ -42,7 +42,6 @@ cargo add ggemini
 use gio::*;
 use glib::*;
 
-
 use ggemini::client::{
     connection::{Request, Response},
     Client,
@@ -58,11 +57,9 @@ fn main() -> ExitCode {
         None, // optional `GTlsCertificate`
         |result| match result {
             Ok((response, _connection)) => match response {
-                Response::Success(success) => match success {
-                    _ => match success.mime() {
-                        "text/gemini" => todo!(),
-                        _ => todo!(),
-                    }
+                Response::Success(success) => match success.mime() {
+                    "text/gemini" => todo!(),
+                    _ => todo!(),
                 },
                 _ => todo!(),
             },
