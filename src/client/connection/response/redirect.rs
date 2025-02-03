@@ -57,7 +57,7 @@ impl Redirect {
         .parse_relative(self.target(), UriFlags::NONE)
         {
             Ok(absolute) => Ok(absolute),
-            Err(e) => Err(Error::Glib(e)),
+            Err(e) => Err(Error::Uri(e)),
         }
     }
 
