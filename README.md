@@ -44,7 +44,7 @@ use glib::*;
 
 
 use ggemini::client::{
-    connection::{response::Success, Request, Response},
+    connection::{Request, Response},
     Client,
 };
 
@@ -59,11 +59,10 @@ fn main() -> ExitCode {
         |result| match result {
             Ok((response, _connection)) => match response {
                 Response::Success(success) => match success {
-                    Success::Default { mime } => match mime.as_str() {
+                    _ => match success.mime() {
                         "text/gemini" => todo!(),
                         _ => todo!(),
-                    },
-                    _ => todo!(),
+                    }
                 },
                 _ => todo!(),
             },
