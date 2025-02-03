@@ -40,19 +40,12 @@ pub fn move_all_from_stream_async(
     memory_input_stream: MemoryInputStream,
     cancellable: Cancellable,
     priority: Priority,
-    bytes: (
-        usize, // bytes_in_chunk
-        usize, // bytes_total_limit
-        usize, // bytes_total
-    ),
-    callback: (
-        impl Fn(Bytes, usize) + 'static, // on_chunk
-        impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static, // on_complete
+    (bytes_in_chunk, bytes_total_limit, mut bytes_total): (usize, usize, usize),
+    (on_chunk, on_complete): (
+        impl Fn(Bytes, usize) + 'static,
+        impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static,
     ),
 ) {
-    let (on_chunk, on_complete) = callback;
-    let (bytes_in_chunk, bytes_total_limit, bytes_total) = bytes;
-
     base_io_stream.input_stream().read_bytes_async(
         bytes_in_chunk,
         priority,
@@ -60,7 +53,7 @@ pub fn move_all_from_stream_async(
         move |result| match result {
             Ok(bytes) => {
                 // Update bytes total
-                let bytes_total = bytes_total + bytes.len();
+                bytes_total += bytes.len();
 
                 // Callback chunk function
                 on_chunk(bytes.clone(), bytes_total);
@@ -92,5 +85,5 @@ pub fn move_all_from_stream_async(
                 on_complete(Err(Error::InputStream(e)));
             }
         },
-    );
+    )
 }
