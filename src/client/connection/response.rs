@@ -1,5 +1,4 @@
 pub mod certificate;
-pub mod data; // @TODO deprecated
 pub mod error;
 pub mod failure;
 pub mod input;
