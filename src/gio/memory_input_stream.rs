@@ -53,18 +53,26 @@ pub fn for_memory_input_stream_async(
         Some(&cancellable.clone()),
         move |result| match result {
             Ok(bytes) => {
-                total += bytes.len();
-                on_chunk(bytes.len(), total);
+                let len = bytes.len(); // calculate once
 
-                if total > limit {
-                    return on_complete(Err(Error::BytesTotal(total, limit)));
-                }
-
-                if bytes.len() == 0 {
-                    return on_complete(Ok((memory_input_stream, total)));
-                }
+                total += len;
+                on_chunk(len, total);
 
                 memory_input_stream.add_bytes(&bytes);
+
+                // prevent memory overflow on size `limit` reached
+                // * add last received bytes into the `memory_input_stream` anyway (to prevent data lost),
+                //   it's safe because limited to the `chunk` size
+                if total > limit {
+                    return on_complete(Err(Error::BytesTotal(memory_input_stream, total, limit)));
+                }
+
+                // is the next iteration required?
+                if len < chunk // some servers may close the connection after first chunk request (@TODO this condition wants review)
+                || len == 0
+                {
+                    return on_complete(Ok((memory_input_stream, total)));
+                }
 
                 // continue reading..
                 for_memory_input_stream_async(
@@ -76,9 +84,7 @@ pub fn for_memory_input_stream_async(
                     (on_chunk, on_complete),
                 )
             }
-            Err(e) => {
-                on_complete(Err(Error::InputStream(e)));
-            }
+            Err(e) => on_complete(Err(Error::InputStream(memory_input_stream, e))),
         },
     )
 }
