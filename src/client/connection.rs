@@ -129,7 +129,9 @@ pub fn new_tls_client_connection(
             // Prevent session resumption (certificate change ability in runtime)
             tls_client_connection.set_property("session-resumption-enabled", is_session_resumption);
 
-            // @TODO handle
+            // Return `Err` on server connection mismatch following specification lines:
+            // > Gemini servers MUST use the TLS close_notify implementation to close the connection
+            // > A client SHOULD notify the user of such a case
             // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections
             tls_client_connection.set_require_close_notify(true);
 
