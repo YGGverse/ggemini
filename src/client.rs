@@ -82,9 +82,11 @@ impl Client {
                                         request,
                                         priority,
                                         cancellable,
-                                        move |result| match result {
-                                            Ok(response) => callback(Ok(response)),
-                                            Err(e) => callback(Err(Error::Connection(e))),
+                                        move |result| {
+                                            callback(match result {
+                                                Ok(response) => Ok(response),
+                                                Err(e) => Err(Error::Connection(e)),
+                                            })
                                         },
                                     ),
                                     Err(e) => callback(Err(Error::Connection(e))),
