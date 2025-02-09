@@ -55,26 +55,24 @@ pub fn for_memory_input_stream_async(
             Ok(bytes) => {
                 let len = bytes.len(); // calculate once
 
-                // is the end of stream
+                // is end of stream
                 if len == 0 {
                     return on_complete(Ok((memory_input_stream, total)));
                 }
 
-                // handle the chunk
+                // callback chunk function
                 total += len;
                 on_chunk(len, total);
 
                 // push bytes into the memory pool
                 memory_input_stream.add_bytes(&bytes);
 
-                // prevent memory overflow on size `limit` reached
-                // * add last received bytes into the `memory_input_stream` anyway (to prevent data lost),
-                //   it's safe because limited to the `chunk` size
+                // prevent memory overflow
                 if total > limit {
                     return on_complete(Err(Error::BytesTotal(memory_input_stream, total, limit)));
                 }
 
-                // continue reading..
+                // handle next chunk..
                 for_memory_input_stream_async(
                     memory_input_stream,
                     io_stream,
