@@ -118,7 +118,7 @@ impl Connection {
 
 /// Setup new [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html)
 /// wrapper for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
-/// using `server_identity` as [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
+/// using `server_identity` as the [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
 pub fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
