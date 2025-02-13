@@ -12,7 +12,7 @@ use glib::Priority;
 
 // Defaults
 
-pub const DEFAULT_TIMEOUT: u32 = 10;
+pub const DEFAULT_TIMEOUT: u32 = 30;
 pub const DEFAULT_SESSION_RESUMPTION: bool = false;
 
 /// Main point where connect external crate
