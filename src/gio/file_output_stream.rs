@@ -61,9 +61,7 @@ pub fn from_stream_async(
                                     (on_chunk, on_complete),
                                 );
                             }
-                            Err((bytes, e)) => {
-                                on_complete(Err(Error::OutputStream(bytes.clone(), e)))
-                            }
+                            Err((b, e)) => on_complete(Err(Error::OutputStream(b, e))),
                         }
                     },
                 );
