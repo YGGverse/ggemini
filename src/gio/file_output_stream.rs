@@ -44,7 +44,10 @@ pub fn from_stream_async(
                     return on_complete(Ok((file_output_stream, total)));
                 }
 
-                file_output_stream.clone().write_async(
+                // Make sure **all bytes** sent to the destination
+                // > A partial write is performed with the size of a message block, which is 16kB
+                // > https://docs.openssl.org/3.0/man3/SSL_write/#notes
+                file_output_stream.clone().write_all_async(
                     bytes.clone(),
                     priority,
                     Some(&cancellable.clone()),

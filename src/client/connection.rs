@@ -9,12 +9,12 @@ pub use response::Response;
 // Local dependencies
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExt, OutputStreamExtManual, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
 };
 use glib::{
     object::{Cast, ObjectExt},
-    Priority,
+    Bytes, Priority,
 };
 
 pub struct Connection {
@@ -61,8 +61,11 @@ impl Connection {
         callback: impl FnOnce(Result<(Response, Self), Error>) + 'static,
     ) {
         let output_stream = self.stream().output_stream();
-        output_stream.clone().write_async(
-            request.header().into_bytes(),
+        // Make sure **all header bytes** sent to the destination
+        // > A partial write is performed with the size of a message block, which is 16kB
+        // > https://docs.openssl.org/3.0/man3/SSL_write/#notes
+        output_stream.clone().write_all_async(
+            Bytes::from_owned(request.header()),
             priority,
             Some(&cancellable.clone()),
             move |result| match result {
@@ -78,8 +81,11 @@ impl Connection {
                             })
                         },
                     ),
-                    Request::Titan { data, .. } => output_stream.write_bytes_async(
-                        &data,
+                    // Make sure **all data bytes** sent to the destination
+                    // > A partial write is performed with the size of a message block, which is 16kB
+                    // > https://docs.openssl.org/3.0/man3/SSL_write/#notes
+                    Request::Titan { data, .. } => output_stream.write_all_async(
+                        data,
                         priority,
                         Some(&cancellable.clone()),
                         move |result| match result {
@@ -94,11 +100,11 @@ impl Connection {
                                     })
                                 },
                             ),
-                            Err(e) => callback(Err(Error::Request(e))),
+                            Err((b, e)) => callback(Err(Error::Request(b, e))),
                         },
                     ),
                 },
-                Err((_, e)) => callback(Err(Error::Request(e))),
+                Err((b, e)) => callback(Err(Error::Request(b, e))),
             },
         )
     }
