@@ -175,34 +175,52 @@ fn test() {
             Some("query"),
             Some("fragment"),
         );
-
-        let resolve = Redirect::from_str("30 /uri\r\n").unwrap();
         assert_eq!(
-            resolve.to_uri(&base).unwrap().to_string(),
+            Redirect::from_str("30 /uri\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
             "gemini://geminiprotocol.net/uri"
         );
-
-        let resolve = Redirect::from_str("30 uri\r\n").unwrap();
         assert_eq!(
-            resolve.to_uri(&base).unwrap().to_string(),
+            Redirect::from_str("30 uri\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
             "gemini://geminiprotocol.net/path/uri"
         );
-
-        let resolve = Redirect::from_str("30 gemini://test.host/uri\r\n").unwrap();
         assert_eq!(
-            resolve.to_uri(&base).unwrap().to_string(),
+            Redirect::from_str("30 gemini://test.host/uri\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
             "gemini://test.host/uri"
         );
-
-        let resolve = Redirect::from_str("30 //\r\n").unwrap();
         assert_eq!(
-            resolve.to_uri(&base).unwrap().to_string(),
+            Redirect::from_str("30 //\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
             "gemini://geminiprotocol.net/"
         );
-
-        let resolve = Redirect::from_str("30 //:\r\n").unwrap();
         assert_eq!(
-            resolve.to_uri(&base).unwrap().to_string(),
+            Redirect::from_str("30 //geminiprotocol.net/path\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
+            "gemini://geminiprotocol.net/path"
+        );
+        assert_eq!(
+            Redirect::from_str("30 //:\r\n")
+                .unwrap()
+                .to_uri(&base)
+                .unwrap()
+                .to_string(),
             "gemini://geminiprotocol.net/"
         );
     }
