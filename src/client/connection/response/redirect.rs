@@ -54,8 +54,32 @@ impl Redirect {
             // > it is up to the client which fragment to apply.
             None, // @TODO
         )
-        .parse_relative(self.target(), UriFlags::NONE)
-        {
+        .parse_relative(
+            &{
+                // URI started with double slash yet not supported by Glib function
+                // https://datatracker.ietf.org/doc/html/rfc3986#section-4.2
+                let t = self.target();
+                match t.strip_prefix("//") {
+                    Some(p) => {
+                        let postfix = p.trim_start_matches(":");
+                        format!(
+                            "{}://{}",
+                            base.scheme(),
+                            if postfix.is_empty() {
+                                match base.host() {
+                                    Some(h) => format!("{h}/"),
+                                    None => return Err(Error::BaseHost),
+                                }
+                            } else {
+                                postfix.to_string()
+                            }
+                        )
+                    }
+                    None => t.to_string(),
+                }
+            },
+            UriFlags::NONE,
+        ) {
             Ok(absolute) => Ok(absolute),
             Err(e) => Err(Error::Uri(e)),
         }
@@ -127,50 +151,59 @@ fn target(value: Option<&GStringPtr>) -> Result<String, Error> {
 }
 
 #[test]
-fn test_from_str() {
+fn test() {
     use std::str::FromStr;
+    {
+        let temporary = Redirect::from_str("30 /uri\r\n").unwrap();
+        assert_eq!(temporary.target(), "/uri");
+        assert_eq!(temporary.to_code(), TEMPORARY.0);
+        assert_eq!(temporary.to_string(), TEMPORARY.1);
 
-    let temporary = Redirect::from_str("30 /uri\r\n").unwrap();
-    assert_eq!(temporary.target(), "/uri");
-    assert_eq!(temporary.to_code(), TEMPORARY.0);
-    assert_eq!(temporary.to_string(), TEMPORARY.1);
+        let permanent = Redirect::from_str("31 /uri\r\n").unwrap();
+        assert_eq!(permanent.target(), "/uri");
+        assert_eq!(permanent.to_code(), PERMANENT.0);
+        assert_eq!(permanent.to_string(), PERMANENT.1);
+    }
+    {
+        let base = Uri::build(
+            UriFlags::NONE,
+            "gemini",
+            None,
+            Some("geminiprotocol.net"),
+            -1,
+            "/path/",
+            Some("query"),
+            Some("fragment"),
+        );
 
-    let permanent = Redirect::from_str("31 /uri\r\n").unwrap();
-    assert_eq!(permanent.target(), "/uri");
-    assert_eq!(permanent.to_code(), PERMANENT.0);
-    assert_eq!(permanent.to_string(), PERMANENT.1);
-}
+        let resolve = Redirect::from_str("30 /uri\r\n").unwrap();
+        assert_eq!(
+            resolve.to_uri(&base).unwrap().to_string(),
+            "gemini://geminiprotocol.net/uri"
+        );
 
-#[test]
-fn test_to_uri() {
-    use std::str::FromStr;
+        let resolve = Redirect::from_str("30 uri\r\n").unwrap();
+        assert_eq!(
+            resolve.to_uri(&base).unwrap().to_string(),
+            "gemini://geminiprotocol.net/path/uri"
+        );
 
-    let request = Uri::build(
-        UriFlags::NONE,
-        "gemini",
-        None,
-        Some("geminiprotocol.net"),
-        -1,
-        "/path/",
-        Some("query"),
-        Some("fragment"),
-    );
+        let resolve = Redirect::from_str("30 gemini://test.host/uri\r\n").unwrap();
+        assert_eq!(
+            resolve.to_uri(&base).unwrap().to_string(),
+            "gemini://test.host/uri"
+        );
 
-    let resolve = Redirect::from_str("30 /uri\r\n").unwrap();
-    assert_eq!(
-        resolve.to_uri(&request).unwrap().to_string(),
-        "gemini://geminiprotocol.net/uri"
-    );
+        let resolve = Redirect::from_str("30 //\r\n").unwrap();
+        assert_eq!(
+            resolve.to_uri(&base).unwrap().to_string(),
+            "gemini://geminiprotocol.net/"
+        );
 
-    let resolve = Redirect::from_str("30 uri\r\n").unwrap();
-    assert_eq!(
-        resolve.to_uri(&request).unwrap().to_string(),
-        "gemini://geminiprotocol.net/path/uri"
-    );
-
-    let resolve = Redirect::from_str("30 gemini://test.host/uri\r\n").unwrap();
-    assert_eq!(
-        resolve.to_uri(&request).unwrap().to_string(),
-        "gemini://test.host/uri"
-    );
+        let resolve = Redirect::from_str("30 //:\r\n").unwrap();
+        assert_eq!(
+            resolve.to_uri(&base).unwrap().to_string(),
+            "gemini://geminiprotocol.net/"
+        );
+    }
 }
