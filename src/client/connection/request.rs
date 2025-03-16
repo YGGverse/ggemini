@@ -39,10 +39,10 @@ impl Request {
                     uri.to_string_partial(UriHideFlags::QUERY),
                     data.len()
                 );
-                if let Some(ref mime) = mime {
+                if let Some(mime) = mime {
                     header.push_str(&format!(";mime={mime}"));
                 }
-                if let Some(ref token) = token {
+                if let Some(token) = token {
                     header.push_str(&format!(";token={token}"));
                 }
                 if let Some(query) = uri.query() {
