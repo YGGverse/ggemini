@@ -9,12 +9,12 @@ pub use response::Response;
 // Local dependencies
 
 use gio::{
-    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
+    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
 };
 use glib::{
-    object::{Cast, ObjectExt},
     Bytes, Priority,
+    object::{Cast, ObjectExt},
 };
 
 pub struct Connection {

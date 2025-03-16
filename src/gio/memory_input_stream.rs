@@ -2,10 +2,10 @@ pub mod error;
 pub use error::Error;
 
 use gio::{
-    prelude::{IOStreamExt, InputStreamExt, MemoryInputStreamExt},
     Cancellable, IOStream, MemoryInputStream,
+    prelude::{IOStreamExt, InputStreamExt, MemoryInputStreamExt},
 };
-use glib::{object::IsA, Priority};
+use glib::{Priority, object::IsA};
 
 /// Asynchronously create new [MemoryInputStream](https://docs.gtk.org/gio/class.MemoryInputStream.html)
 /// from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)

@@ -7,7 +7,7 @@ pub mod error;
 pub use connection::{Connection, Request, Response};
 pub use error::Error;
 
-use gio::{prelude::SocketClientExt, Cancellable, SocketClient, SocketProtocol, TlsCertificate};
+use gio::{Cancellable, SocketClient, SocketProtocol, TlsCertificate, prelude::SocketClientExt};
 use glib::Priority;
 
 // Defaults

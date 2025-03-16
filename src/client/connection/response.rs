@@ -14,7 +14,7 @@ pub use success::Success;
 
 use super::Connection;
 use gio::{Cancellable, IOStream};
-use glib::{object::IsA, Priority};
+use glib::{Priority, object::IsA};
 
 const HEADER_LEN: usize = 1024;
 

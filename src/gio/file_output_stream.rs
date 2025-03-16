@@ -2,10 +2,10 @@ pub mod error;
 pub use error::Error;
 
 use gio::{
-    prelude::{IOStreamExt, InputStreamExt, OutputStreamExtManual},
     Cancellable, FileOutputStream, IOStream,
+    prelude::{IOStreamExt, InputStreamExt, OutputStreamExtManual},
 };
-use glib::{object::IsA, Bytes, Priority};
+use glib::{Bytes, Priority, object::IsA};
 
 /// Asynchronously move all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 /// to [FileOutputStream](https://docs.gtk.org/gio/class.FileOutputStream.html)
