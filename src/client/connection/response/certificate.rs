@@ -9,11 +9,20 @@ const NOT_VALID: (u8, &str) = (11, "Certificate not valid");
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
 pub enum Certificate {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
-    Required { message: Option<String> },
+    Required {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-61-certificate-not-authorized
-    NotAuthorized { message: Option<String> },
+    NotAuthorized {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-62-certificate-not-valid
-    NotValid { message: Option<String> },
+    NotValid {
+        header: String,
+        message: Option<String>,
+    },
 }
 
 impl Certificate {
@@ -39,11 +48,20 @@ impl Certificate {
         .0
     }
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Required { header, .. }
+            | Self::NotAuthorized { header, .. }
+            | Self::NotValid { header, .. } => header,
+        }
+        .as_str()
+    }
+
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Required { message } => message,
-            Self::NotAuthorized { message } => message,
-            Self::NotValid { message } => message,
+            Self::Required { message, .. }
+            | Self::NotAuthorized { message, .. }
+            | Self::NotValid { message, .. } => message,
         }
         .as_deref()
     }
@@ -69,16 +87,19 @@ impl std::str::FromStr for Certificate {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("60") {
             return Ok(Self::Required {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("61") {
             return Ok(Self::NotAuthorized {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("62") {
             return Ok(Self::NotValid {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }

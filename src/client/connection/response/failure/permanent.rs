@@ -10,15 +10,30 @@ const BAD_REQUEST: (u8, &str) = (59, "bad-request");
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#permanent-failure
 pub enum Permanent {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-50
-    Default { message: Option<String> },
+    Default {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-51-not-found
-    NotFound { message: Option<String> },
+    NotFound {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-52-gone
-    Gone { message: Option<String> },
+    Gone {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-53-proxy-request-refused
-    ProxyRequestRefused { message: Option<String> },
+    ProxyRequestRefused {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-59-bad-request
-    BadRequest { message: Option<String> },
+    BadRequest {
+        header: String,
+        message: Option<String>,
+    },
 }
 
 impl Permanent {
@@ -46,13 +61,24 @@ impl Permanent {
         .0
     }
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Default { header, .. }
+            | Self::NotFound { header, .. }
+            | Self::Gone { header, .. }
+            | Self::ProxyRequestRefused { header, .. }
+            | Self::BadRequest { header, .. } => header,
+        }
+        .as_str()
+    }
+
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message } => message,
-            Self::NotFound { message } => message,
-            Self::Gone { message } => message,
-            Self::ProxyRequestRefused { message } => message,
-            Self::BadRequest { message } => message,
+            Self::Default { message, .. }
+            | Self::NotFound { message, .. }
+            | Self::Gone { message, .. }
+            | Self::ProxyRequestRefused { message, .. }
+            | Self::BadRequest { message, .. } => message,
         }
         .as_deref()
     }
@@ -80,26 +106,31 @@ impl std::str::FromStr for Permanent {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("50") {
             return Ok(Self::Default {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("51") {
             return Ok(Self::NotFound {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("52") {
             return Ok(Self::Gone {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("53") {
             return Ok(Self::ProxyRequestRefused {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("59") {
             return Ok(Self::BadRequest {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }

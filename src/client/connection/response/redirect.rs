@@ -8,9 +8,9 @@ const PERMANENT: (u8, &str) = (31, "Permanent redirect");
 
 pub enum Redirect {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-30-temporary-redirection
-    Temporary { target: String },
+    Temporary { header: String, target: String },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-31-permanent-redirection
-    Permanent { target: String },
+    Permanent { header: String, target: String },
 }
 
 impl Redirect {
@@ -87,10 +87,15 @@ impl Redirect {
 
     // Getters
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Permanent { header, .. } | Self::Temporary { header, .. } => header,
+        }
+    }
+
     pub fn target(&self) -> &str {
         match self {
-            Self::Permanent { target } => target,
-            Self::Temporary { target } => target,
+            Self::Permanent { target, .. } | Self::Temporary { target, .. } => target,
         }
     }
 }
@@ -124,9 +129,11 @@ impl std::str::FromStr for Redirect {
         match regex.get(1) {
             Some(code) => match code.as_str() {
                 "0" => Ok(Self::Temporary {
+                    header: header.to_string(),
                     target: target(regex.get(2))?,
                 }),
                 "1" => Ok(Self::Permanent {
+                    header: header.to_string(),
                     target: target(regex.get(2))?,
                 }),
                 _ => todo!(),

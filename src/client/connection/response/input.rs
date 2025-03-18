@@ -5,8 +5,14 @@ const DEFAULT: (u8, &str) = (10, "Input");
 const SENSITIVE: (u8, &str) = (11, "Sensitive input");
 
 pub enum Input {
-    Default { message: Option<String> },
-    Sensitive { message: Option<String> },
+    Default {
+        header: String,
+        message: Option<String>,
+    },
+    Sensitive {
+        header: String,
+        message: Option<String>,
+    },
 }
 
 impl Input {
@@ -31,10 +37,16 @@ impl Input {
         .0
     }
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Default { header, .. } | Self::Sensitive { header, .. } => header,
+        }
+        .as_str()
+    }
+
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message } => message,
-            Self::Sensitive { message } => message,
+            Self::Default { message, .. } | Self::Sensitive { message, .. } => message,
         }
         .as_deref()
     }
@@ -59,11 +71,13 @@ impl std::str::FromStr for Input {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("10") {
             return Ok(Self::Default {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("11") {
             return Ok(Self::Sensitive {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }

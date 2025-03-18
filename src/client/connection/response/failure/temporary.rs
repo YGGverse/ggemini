@@ -10,15 +10,30 @@ const SLOW_DOWN: (u8, &str) = (44, "Slow down");
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#temporary-failure
 pub enum Temporary {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-40
-    Default { message: Option<String> },
+    Default {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-41-server-unavailable
-    ServerUnavailable { message: Option<String> },
+    ServerUnavailable {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-42-cgi-error
-    CgiError { message: Option<String> },
+    CgiError {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-43-proxy-error
-    ProxyError { message: Option<String> },
+    ProxyError {
+        header: String,
+        message: Option<String>,
+    },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-44-slow-down
-    SlowDown { message: Option<String> },
+    SlowDown {
+        header: String,
+        message: Option<String>,
+    },
 }
 
 impl Temporary {
@@ -46,13 +61,24 @@ impl Temporary {
         .0
     }
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Default { header, .. }
+            | Self::ServerUnavailable { header, .. }
+            | Self::CgiError { header, .. }
+            | Self::ProxyError { header, .. }
+            | Self::SlowDown { header, .. } => header,
+        }
+        .as_str()
+    }
+
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message } => message,
-            Self::ServerUnavailable { message } => message,
-            Self::CgiError { message } => message,
-            Self::ProxyError { message } => message,
-            Self::SlowDown { message } => message,
+            Self::Default { message, .. }
+            | Self::ServerUnavailable { message, .. }
+            | Self::CgiError { message, .. }
+            | Self::ProxyError { message, .. }
+            | Self::SlowDown { message, .. } => message,
         }
         .as_deref()
     }
@@ -80,26 +106,31 @@ impl std::str::FromStr for Temporary {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("40") {
             return Ok(Self::Default {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("41") {
             return Ok(Self::ServerUnavailable {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("42") {
             return Ok(Self::CgiError {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("43") {
             return Ok(Self::ProxyError {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("44") {
             return Ok(Self::SlowDown {
+                header: header.to_string(),
                 message: message(postfix),
             });
         }

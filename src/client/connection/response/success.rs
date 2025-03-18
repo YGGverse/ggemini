@@ -4,7 +4,7 @@ pub use error::Error;
 const DEFAULT: (u8, &str) = (20, "Success");
 
 pub enum Success {
-    Default { mime: String },
+    Default { header: String, mime: String },
     // reserved for 2* codes
 }
 
@@ -30,9 +30,16 @@ impl Success {
 
     // Getters
 
+    pub fn header(&self) -> &str {
+        match self {
+            Self::Default { header, .. } => header,
+        }
+        .as_str()
+    }
+
     pub fn mime(&self) -> &str {
         match self {
-            Self::Default { mime } => mime,
+            Self::Default { mime, .. } => mime,
         }
     }
 }
@@ -53,7 +60,6 @@ impl std::str::FromStr for Success {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
-
         match Regex::split_simple(
             r"^20\s([^\/]+\/[^\s;]+)",
             header,
@@ -68,6 +74,7 @@ impl std::str::FromStr for Success {
                     Err(Error::Mime)
                 } else {
                     Ok(Self::Default {
+                        header: header.to_string(),
                         mime: mime.to_lowercase(),
                     })
                 }
