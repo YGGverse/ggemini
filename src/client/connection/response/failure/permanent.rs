@@ -42,7 +42,14 @@ impl Permanent {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        match std::str::from_utf8(buffer) {
+        let len = buffer.len();
+        match std::str::from_utf8(
+            &buffer[..if len > super::super::HEADER_LEN {
+                super::super::HEADER_LEN
+            } else {
+                len
+            }],
+        ) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }

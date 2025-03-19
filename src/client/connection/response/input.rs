@@ -21,7 +21,14 @@ impl Input {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        match std::str::from_utf8(buffer) {
+        let len = buffer.len();
+        match std::str::from_utf8(
+            &buffer[..if len > super::HEADER_LEN {
+                super::HEADER_LEN
+            } else {
+                len
+            }],
+        ) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -69,17 +76,19 @@ impl std::fmt::Display for Input {
 impl std::str::FromStr for Input {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
-        if let Some(postfix) = header.strip_prefix("10") {
-            return Ok(Self::Default {
-                header: header.to_string(),
-                message: message(postfix),
-            });
-        }
-        if let Some(postfix) = header.strip_prefix("11") {
-            return Ok(Self::Sensitive {
-                header: header.to_string(),
-                message: message(postfix),
-            });
+        if header.len() <= super::HEADER_LEN {
+            if let Some(postfix) = header.strip_prefix("10") {
+                return Ok(Self::Default {
+                    header: header.to_string(),
+                    message: message(postfix),
+                });
+            }
+            if let Some(postfix) = header.strip_prefix("11") {
+                return Ok(Self::Sensitive {
+                    header: header.to_string(),
+                    message: message(postfix),
+                });
+            }
         }
         Err(Error::Protocol)
     }
