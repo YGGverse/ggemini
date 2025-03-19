@@ -1,9 +1,9 @@
 pub mod error;
 pub use error::Error;
 
-const REQUIRED: (u8, &str) = (10, "Certificate required");
-const NOT_AUTHORIZED: (u8, &str) = (11, "Certificate not authorized");
-const NOT_VALID: (u8, &str) = (11, "Certificate not valid");
+const REQUIRED: (u8, &str) = (60, "Certificate required");
+const NOT_AUTHORIZED: (u8, &str) = (61, "Certificate not authorized");
+const NOT_VALID: (u8, &str) = (62, "Certificate not valid");
 
 /// 6* status code group
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
