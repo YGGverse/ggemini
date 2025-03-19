@@ -76,21 +76,22 @@ impl std::fmt::Display for Input {
 impl std::str::FromStr for Input {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
-        if header.len() <= super::HEADER_LEN {
-            if let Some(postfix) = header.strip_prefix("10") {
-                return Ok(Self::Default {
-                    header: header.to_string(),
-                    message: message(postfix),
-                });
-            }
-            if let Some(postfix) = header.strip_prefix("11") {
-                return Ok(Self::Sensitive {
-                    header: header.to_string(),
-                    message: message(postfix),
-                });
-            }
+        if header.len() > super::HEADER_LEN {
+            return Err(Error::HeaderLen(header.len()));
         }
-        Err(Error::Protocol)
+        if let Some(postfix) = header.strip_prefix("10") {
+            return Ok(Self::Default {
+                header: header.to_string(),
+                message: message(postfix),
+            });
+        }
+        if let Some(postfix) = header.strip_prefix("11") {
+            return Ok(Self::Sensitive {
+                header: header.to_string(),
+                message: message(postfix),
+            });
+        }
+        Err(Error::Code)
     }
 }
 
