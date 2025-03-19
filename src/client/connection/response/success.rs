@@ -60,26 +60,35 @@ impl std::str::FromStr for Success {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
-        match Regex::split_simple(
-            r"^20\s([^\/]+\/[^\s;]+)",
-            header,
-            RegexCompileFlags::DEFAULT,
-            RegexMatchFlags::DEFAULT,
-        )
-        .get(1)
-        {
-            Some(mime) => {
-                let mime = mime.trim();
-                if mime.is_empty() {
-                    Err(Error::Mime)
-                } else {
-                    Ok(Self::Default {
-                        header: header.to_string(),
-                        mime: mime.to_lowercase(),
-                    })
+
+        if header.len() > super::HEADER_LEN {
+            return Err(Error::HeaderLen(header.len()));
+        }
+
+        // * keep separator after code as expected by protocol
+        match header.strip_prefix("20") {
+            Some(postfix) => match Regex::split_simple(
+                r"^\s+([^\/]+\/[^\s;]+)",
+                postfix,
+                RegexCompileFlags::DEFAULT,
+                RegexMatchFlags::DEFAULT,
+            )
+            .get(1)
+            {
+                Some(mime) => {
+                    let mime = mime.trim();
+                    if mime.is_empty() {
+                        Err(Error::ContentType)
+                    } else {
+                        Ok(Self::Default {
+                            header: header.to_string(),
+                            mime: mime.to_lowercase(),
+                        })
+                    }
                 }
-            }
-            None => Err(Error::Protocol),
+                None => Err(Error::ContentType),
+            },
+            None => Err(Error::Code),
         }
     }
 }
