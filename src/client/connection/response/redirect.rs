@@ -8,9 +8,9 @@ const PERMANENT: (u8, &str) = (31, "Permanent redirect");
 
 pub enum Redirect {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-30-temporary-redirection
-    Temporary { header: String, target: String },
+    Temporary { target: String },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-31-permanent-redirection
-    Permanent { header: String, target: String },
+    Permanent { target: String },
 }
 
 impl Redirect {
@@ -19,14 +19,7 @@ impl Redirect {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::HEADER_LEN {
-                super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -94,15 +87,10 @@ impl Redirect {
 
     // Getters
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Permanent { header, .. } | Self::Temporary { header, .. } => header,
-        }
-    }
-
     pub fn target(&self) -> &str {
         match self {
-            Self::Permanent { target, .. } | Self::Temporary { target, .. } => target,
+            Self::Permanent { target } => target,
+            Self::Temporary { target } => target,
         }
     }
 }
@@ -136,11 +124,9 @@ impl std::str::FromStr for Redirect {
         match regex.get(1) {
             Some(code) => match code.as_str() {
                 "0" => Ok(Self::Temporary {
-                    header: header.to_string(),
                     target: target(regex.get(2))?,
                 }),
                 "1" => Ok(Self::Permanent {
-                    header: header.to_string(),
                     target: target(regex.get(2))?,
                 }),
                 _ => todo!(),

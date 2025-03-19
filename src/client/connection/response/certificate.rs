@@ -1,28 +1,19 @@
 pub mod error;
 pub use error::Error;
 
-const REQUIRED: (u8, &str) = (60, "Certificate required");
-const NOT_AUTHORIZED: (u8, &str) = (61, "Certificate not authorized");
-const NOT_VALID: (u8, &str) = (62, "Certificate not valid");
+const REQUIRED: (u8, &str) = (10, "Certificate required");
+const NOT_AUTHORIZED: (u8, &str) = (11, "Certificate not authorized");
+const NOT_VALID: (u8, &str) = (11, "Certificate not valid");
 
 /// 6* status code group
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
 pub enum Certificate {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
-    Required {
-        header: String,
-        message: Option<String>,
-    },
+    Required { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-61-certificate-not-authorized
-    NotAuthorized {
-        header: String,
-        message: Option<String>,
-    },
+    NotAuthorized { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-62-certificate-not-valid
-    NotValid {
-        header: String,
-        message: Option<String>,
-    },
+    NotValid { message: Option<String> },
 }
 
 impl Certificate {
@@ -31,14 +22,7 @@ impl Certificate {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::HEADER_LEN {
-                super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -55,20 +39,11 @@ impl Certificate {
         .0
     }
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Required { header, .. }
-            | Self::NotAuthorized { header, .. }
-            | Self::NotValid { header, .. } => header,
-        }
-        .as_str()
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Required { message, .. }
-            | Self::NotAuthorized { message, .. }
-            | Self::NotValid { message, .. } => message,
+            Self::Required { message } => message,
+            Self::NotAuthorized { message } => message,
+            Self::NotValid { message } => message,
         }
         .as_deref()
     }
@@ -92,25 +67,18 @@ impl std::fmt::Display for Certificate {
 impl std::str::FromStr for Certificate {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
-        let len = header.len();
-        if len > super::HEADER_LEN {
-            return Err(Error::HeaderLen(len));
-        }
         if let Some(postfix) = header.strip_prefix("60") {
             return Ok(Self::Required {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("61") {
             return Ok(Self::NotAuthorized {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("62") {
             return Ok(Self::NotValid {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }

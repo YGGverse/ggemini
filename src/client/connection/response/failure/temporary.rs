@@ -10,30 +10,15 @@ const SLOW_DOWN: (u8, &str) = (44, "Slow down");
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#temporary-failure
 pub enum Temporary {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-40
-    Default {
-        header: String,
-        message: Option<String>,
-    },
+    Default { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-41-server-unavailable
-    ServerUnavailable {
-        header: String,
-        message: Option<String>,
-    },
+    ServerUnavailable { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-42-cgi-error
-    CgiError {
-        header: String,
-        message: Option<String>,
-    },
+    CgiError { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-43-proxy-error
-    ProxyError {
-        header: String,
-        message: Option<String>,
-    },
+    ProxyError { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-44-slow-down
-    SlowDown {
-        header: String,
-        message: Option<String>,
-    },
+    SlowDown { message: Option<String> },
 }
 
 impl Temporary {
@@ -42,14 +27,7 @@ impl Temporary {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::super::HEADER_LEN {
-                super::super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -68,24 +46,13 @@ impl Temporary {
         .0
     }
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Default { header, .. }
-            | Self::ServerUnavailable { header, .. }
-            | Self::CgiError { header, .. }
-            | Self::ProxyError { header, .. }
-            | Self::SlowDown { header, .. } => header,
-        }
-        .as_str()
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message, .. }
-            | Self::ServerUnavailable { message, .. }
-            | Self::CgiError { message, .. }
-            | Self::ProxyError { message, .. }
-            | Self::SlowDown { message, .. } => message,
+            Self::Default { message } => message,
+            Self::ServerUnavailable { message } => message,
+            Self::CgiError { message } => message,
+            Self::ProxyError { message } => message,
+            Self::SlowDown { message } => message,
         }
         .as_deref()
     }
@@ -113,31 +80,26 @@ impl std::str::FromStr for Temporary {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("40") {
             return Ok(Self::Default {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("41") {
             return Ok(Self::ServerUnavailable {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("42") {
             return Ok(Self::CgiError {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("43") {
             return Ok(Self::ProxyError {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("44") {
             return Ok(Self::SlowDown {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }

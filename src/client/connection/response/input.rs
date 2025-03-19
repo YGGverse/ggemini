@@ -5,14 +5,8 @@ const DEFAULT: (u8, &str) = (10, "Input");
 const SENSITIVE: (u8, &str) = (11, "Sensitive input");
 
 pub enum Input {
-    Default {
-        header: String,
-        message: Option<String>,
-    },
-    Sensitive {
-        header: String,
-        message: Option<String>,
-    },
+    Default { message: Option<String> },
+    Sensitive { message: Option<String> },
 }
 
 impl Input {
@@ -21,14 +15,7 @@ impl Input {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::HEADER_LEN {
-                super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -44,16 +31,10 @@ impl Input {
         .0
     }
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Default { header, .. } | Self::Sensitive { header, .. } => header,
-        }
-        .as_str()
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message, .. } | Self::Sensitive { message, .. } => message,
+            Self::Default { message } => message,
+            Self::Sensitive { message } => message,
         }
         .as_deref()
     }
@@ -76,22 +57,17 @@ impl std::fmt::Display for Input {
 impl std::str::FromStr for Input {
     type Err = Error;
     fn from_str(header: &str) -> Result<Self, Self::Err> {
-        if header.len() > super::HEADER_LEN {
-            return Err(Error::HeaderLen(header.len()));
-        }
         if let Some(postfix) = header.strip_prefix("10") {
             return Ok(Self::Default {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("11") {
             return Ok(Self::Sensitive {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
-        Err(Error::Code)
+        Err(Error::Protocol)
     }
 }
 

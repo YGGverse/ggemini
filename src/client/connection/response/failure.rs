@@ -45,13 +45,6 @@ impl Failure {
         }
     }
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Permanent(permanent) => permanent.header(),
-            Self::Temporary(temporary) => temporary.header(),
-        }
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
             Self::Permanent(permanent) => permanent.message(),

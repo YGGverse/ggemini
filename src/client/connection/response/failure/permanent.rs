@@ -10,30 +10,15 @@ const BAD_REQUEST: (u8, &str) = (59, "bad-request");
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#permanent-failure
 pub enum Permanent {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-50
-    Default {
-        header: String,
-        message: Option<String>,
-    },
+    Default { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-51-not-found
-    NotFound {
-        header: String,
-        message: Option<String>,
-    },
+    NotFound { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-52-gone
-    Gone {
-        header: String,
-        message: Option<String>,
-    },
+    Gone { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-53-proxy-request-refused
-    ProxyRequestRefused {
-        header: String,
-        message: Option<String>,
-    },
+    ProxyRequestRefused { message: Option<String> },
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-59-bad-request
-    BadRequest {
-        header: String,
-        message: Option<String>,
-    },
+    BadRequest { message: Option<String> },
 }
 
 impl Permanent {
@@ -42,14 +27,7 @@ impl Permanent {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::super::HEADER_LEN {
-                super::super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -68,24 +46,13 @@ impl Permanent {
         .0
     }
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Default { header, .. }
-            | Self::NotFound { header, .. }
-            | Self::Gone { header, .. }
-            | Self::ProxyRequestRefused { header, .. }
-            | Self::BadRequest { header, .. } => header,
-        }
-        .as_str()
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message, .. }
-            | Self::NotFound { message, .. }
-            | Self::Gone { message, .. }
-            | Self::ProxyRequestRefused { message, .. }
-            | Self::BadRequest { message, .. } => message,
+            Self::Default { message } => message,
+            Self::NotFound { message } => message,
+            Self::Gone { message } => message,
+            Self::ProxyRequestRefused { message } => message,
+            Self::BadRequest { message } => message,
         }
         .as_deref()
     }
@@ -113,31 +80,26 @@ impl std::str::FromStr for Permanent {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         if let Some(postfix) = header.strip_prefix("50") {
             return Ok(Self::Default {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("51") {
             return Ok(Self::NotFound {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("52") {
             return Ok(Self::Gone {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("53") {
             return Ok(Self::ProxyRequestRefused {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }
         if let Some(postfix) = header.strip_prefix("59") {
             return Ok(Self::BadRequest {
-                header: header.to_string(),
                 message: message(postfix),
             });
         }

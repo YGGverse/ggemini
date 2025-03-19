@@ -4,7 +4,7 @@ pub use error::Error;
 const DEFAULT: (u8, &str) = (20, "Success");
 
 pub enum Success {
-    Default { header: String, mime: String },
+    Default { mime: String },
     // reserved for 2* codes
 }
 
@@ -14,14 +14,7 @@ impl Success {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         use std::str::FromStr;
-        let len = buffer.len();
-        match std::str::from_utf8(
-            &buffer[..if len > super::HEADER_LEN {
-                super::HEADER_LEN
-            } else {
-                len
-            }],
-        ) {
+        match std::str::from_utf8(buffer) {
             Ok(header) => Self::from_str(header),
             Err(e) => Err(Error::Utf8Error(e)),
         }
@@ -37,16 +30,9 @@ impl Success {
 
     // Getters
 
-    pub fn header(&self) -> &str {
-        match self {
-            Self::Default { header, .. } => header,
-        }
-        .as_str()
-    }
-
     pub fn mime(&self) -> &str {
         match self {
-            Self::Default { mime, .. } => mime,
+            Self::Default { mime } => mime,
         }
     }
 }
@@ -68,34 +54,25 @@ impl std::str::FromStr for Success {
     fn from_str(header: &str) -> Result<Self, Self::Err> {
         use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
 
-        if header.len() > super::HEADER_LEN {
-            return Err(Error::HeaderLen(header.len()));
-        }
-
-        // * keep separator after code as expected by protocol
-        match header.strip_prefix("20") {
-            Some(postfix) => match Regex::split_simple(
-                r"^\s+([^\/]+\/[^\s;]+)",
-                postfix,
-                RegexCompileFlags::DEFAULT,
-                RegexMatchFlags::DEFAULT,
-            )
-            .get(1)
-            {
-                Some(mime) => {
-                    let mime = mime.trim();
-                    if mime.is_empty() {
-                        Err(Error::ContentType)
-                    } else {
-                        Ok(Self::Default {
-                            header: header.to_string(),
-                            mime: mime.to_lowercase(),
-                        })
-                    }
+        match Regex::split_simple(
+            r"^20\s([^\/]+\/[^\s;]+)",
+            header,
+            RegexCompileFlags::DEFAULT,
+            RegexMatchFlags::DEFAULT,
+        )
+        .get(1)
+        {
+            Some(mime) => {
+                let mime = mime.trim();
+                if mime.is_empty() {
+                    Err(Error::Mime)
+                } else {
+                    Ok(Self::Default {
+                        mime: mime.to_lowercase(),
+                    })
                 }
-                None => Err(Error::ContentType),
-            },
-            None => Err(Error::Code),
+            }
+            None => Err(Error::Protocol),
         }
     }
 }
