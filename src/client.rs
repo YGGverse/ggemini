@@ -74,8 +74,8 @@ impl Client {
                             Ok(socket_connection) => {
                                 match Connection::build(
                                     socket_connection,
+                                    network_address,
                                     certificate,
-                                    Some(network_address),
                                     is_session_resumption,
                                 ) {
                                     Ok(connection) => connection.request_async(

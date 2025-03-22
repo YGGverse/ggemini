@@ -18,6 +18,8 @@ use glib::{
 };
 
 pub struct Connection {
+    pub network_address: NetworkAddress,
+    pub socket_connection: SocketConnection,
     pub tls_client_connection: TlsClientConnection,
 }
 
@@ -27,24 +29,26 @@ impl Connection {
     /// Create new `Self`
     pub fn build(
         socket_connection: SocketConnection,
+        network_address: NetworkAddress,
         certificate: Option<TlsCertificate>,
-        server_identity: Option<NetworkAddress>,
         is_session_resumption: bool,
     ) -> Result<Self, Error> {
         Ok(Self {
             tls_client_connection: match new_tls_client_connection(
                 &socket_connection,
-                server_identity.as_ref(),
+                Some(&network_address),
                 is_session_resumption,
             ) {
                 Ok(tls_client_connection) => {
-                    if let Some(ref certificate) = certificate {
-                        tls_client_connection.set_certificate(certificate);
+                    if let Some(ref c) = certificate {
+                        tls_client_connection.set_certificate(c);
                     }
                     tls_client_connection
                 }
                 Err(e) => return Err(e),
             },
+            network_address,
+            socket_connection,
         })
     }
 
