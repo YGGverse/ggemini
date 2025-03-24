@@ -43,7 +43,7 @@ use gio::*;
 use glib::*;
 
 use ggemini::client::{
-    connection::{Request, Response},
+    connection::{request::{Mode, Request}, Response},
     Client,
 };
 
@@ -51,6 +51,7 @@ fn main() -> ExitCode {
     Client::new().request_async(
         Request::Gemini { // or `Request::Titan`
             uri: Uri::parse("gemini://geminiprotocol.net/", UriFlags::NONE).unwrap(),
+            mode: Mode::Header // handle content separately (based on MIME)
         },
         Priority::DEFAULT,
         Cancellable::new(),

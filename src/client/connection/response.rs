@@ -6,7 +6,7 @@ pub mod redirect;
 pub mod success;
 
 pub use certificate::Certificate;
-pub use error::Error;
+pub use error::{Error, HeaderBytesError};
 pub use failure::Failure;
 pub use input::Input;
 pub use redirect::Redirect;
@@ -29,13 +29,13 @@ pub enum Response {
 
 impl Response {
     /// Asynchronously create new `Self` for given `Connection`
-    pub fn from_connection_async(
+    pub fn header_from_connection_async(
         connection: Connection,
         priority: Priority,
         cancellable: Cancellable,
         callback: impl FnOnce(Result<Self, Error>, Connection) + 'static,
     ) {
-        from_stream_async(
+        header_from_stream_async(
             Vec::with_capacity(HEADER_LEN),
             connection.stream(),
             cancellable,
@@ -44,12 +44,12 @@ impl Response {
                 callback(
                     match result {
                         Ok(buffer) => match buffer.first() {
-                            Some(byte) => match byte {
+                            Some(b) => match b {
                                 b'1' => match Input::from_utf8(&buffer) {
                                     Ok(input) => Ok(Self::Input(input)),
                                     Err(e) => Err(Error::Input(e)),
                                 },
-                                b'2' => match Success::from_utf8(&buffer) {
+                                b'2' => match Success::parse(&buffer) {
                                     Ok(success) => Ok(Self::Success(success)),
                                     Err(e) => Err(Error::Success(e)),
                                 },
@@ -65,9 +65,9 @@ impl Response {
                                     Ok(certificate) => Ok(Self::Certificate(certificate)),
                                     Err(e) => Err(Error::Certificate(e)),
                                 },
-                                _ => Err(Error::Code),
+                                b => Err(Error::Code(*b)),
                             },
-                            None => Err(Error::Protocol),
+                            None => Err(Error::Protocol(buffer)),
                         },
                         Err(e) => Err(e),
                     },
@@ -84,43 +84,63 @@ impl Response {
 ///
 /// Return UTF-8 buffer collected
 /// * requires `IOStream` reference to keep `Connection` active in async thread
-fn from_stream_async(
+fn header_from_stream_async(
     mut buffer: Vec<u8>,
     stream: impl IsA<IOStream>,
     cancellable: Cancellable,
     priority: Priority,
-    on_complete: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
+    callback: impl FnOnce(Result<Vec<u8>, Error>) + 'static,
 ) {
     use gio::prelude::{IOStreamExt, InputStreamExtManual};
-
     stream.input_stream().read_async(
         vec![0],
         priority,
         Some(&cancellable.clone()),
         move |result| match result {
-            Ok((mut bytes, size)) => {
-                // Expect valid header length
-                if size == 0 || buffer.len() >= HEADER_LEN {
-                    return on_complete(Err(Error::Protocol));
+            Ok((bytes, size)) => {
+                if size == 0 {
+                    return callback(Ok(buffer));
                 }
-
-                // Read next byte without record
-                if bytes.contains(&b'\r') {
-                    return from_stream_async(buffer, stream, cancellable, priority, on_complete);
+                if buffer.len() + bytes.len() > HEADER_LEN {
+                    buffer.extend(bytes);
+                    return callback(Err(Error::Protocol(buffer)));
                 }
-
-                // Complete without record
-                if bytes.contains(&b'\n') {
-                    return on_complete(Ok(buffer));
+                if bytes[0] == b'\r' {
+                    buffer.extend(bytes);
+                    return header_from_stream_async(
+                        buffer,
+                        stream,
+                        cancellable,
+                        priority,
+                        callback,
+                    );
                 }
-
-                // Record
-                buffer.append(&mut bytes);
-
-                // Continue
-                from_stream_async(buffer, stream, cancellable, priority, on_complete);
+                if bytes[0] == b'\n' {
+                    buffer.extend(bytes);
+                    return callback(Ok(buffer));
+                }
+                buffer.extend(bytes);
+                header_from_stream_async(buffer, stream, cancellable, priority, callback)
             }
-            Err((data, e)) => on_complete(Err(Error::Stream(e, data))),
+            Err((data, e)) => callback(Err(Error::Stream(e, data))),
         },
     )
+}
+
+/// Get header bytes slice
+/// * common for all child parsers
+fn header_bytes(buffer: &[u8]) -> Result<&[u8], HeaderBytesError> {
+    for (i, b) in buffer.iter().enumerate() {
+        if i > 1024 {
+            return Err(HeaderBytesError::Len);
+        }
+        if *b == b'\r' {
+            let n = i + 1;
+            if buffer.get(n).is_some_and(|b| *b == b'\n') {
+                return Ok(&buffer[..n]);
+            }
+            break;
+        }
+    }
+    Err(HeaderBytesError::End)
 }

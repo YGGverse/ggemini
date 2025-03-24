@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter, Result};
 #[derive(Debug)]
 pub enum Error {
     Code,
-    Default(super::default::Error),
+    Header(super::header::Error),
 }
 
 impl Display for Error {
@@ -12,7 +12,7 @@ impl Display for Error {
             Self::Code => {
                 write!(f, "Unexpected status code")
             }
-            Self::Default(e) => {
+            Self::Header(e) => {
                 write!(f, "Header error: {e}")
             }
         }

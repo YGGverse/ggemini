@@ -1,5 +1,8 @@
 pub mod error;
+pub mod mode;
+
 pub use error::Error;
+pub use mode::Mode;
 
 // Local dependencies
 
@@ -10,6 +13,7 @@ use glib::{Bytes, Uri, UriHideFlags};
 pub enum Request {
     Gemini {
         uri: Uri,
+        mode: Mode,
     },
     Titan {
         uri: Uri,
@@ -18,6 +22,7 @@ pub enum Request {
         /// but server MAY reject the request without `mime` value provided.
         mime: Option<String>,
         token: Option<String>,
+        mode: Mode,
     },
 }
 
@@ -27,12 +32,13 @@ impl Request {
     /// Generate header string for `Self`
     pub fn header(&self) -> String {
         match self {
-            Self::Gemini { uri } => format!("{uri}\r\n"),
+            Self::Gemini { uri, .. } => format!("{uri}\r\n"),
             Self::Titan {
                 uri,
                 data,
                 mime,
                 token,
+                ..
             } => {
                 let mut header = format!(
                     "{};size={}",
@@ -57,7 +63,7 @@ impl Request {
     /// Get reference to `Self` [Uri](https://docs.gtk.org/glib/struct.Uri.html)
     pub fn uri(&self) -> &Uri {
         match self {
-            Self::Gemini { uri } => uri,
+            Self::Gemini { uri, .. } => uri,
             Self::Titan { uri, .. } => uri,
         }
     }
@@ -79,7 +85,8 @@ fn test_gemini_header() {
 
     assert_eq!(
         Request::Gemini {
-            uri: Uri::parse(REQUEST, UriFlags::NONE).unwrap()
+            uri: Uri::parse(REQUEST, UriFlags::NONE).unwrap(),
+            mode: Mode::Header
         }
         .header(),
         format!("{REQUEST}\r\n")
@@ -103,7 +110,8 @@ fn test_titan_header() {
             .unwrap(),
             data: Bytes::from(DATA),
             mime: Some(MIME.to_string()),
-            token: Some(TOKEN.to_string())
+            token: Some(TOKEN.to_string()),
+            mode: Mode::Header
         }
         .header(),
         format!(

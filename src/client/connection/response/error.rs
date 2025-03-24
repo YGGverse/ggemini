@@ -6,10 +6,10 @@ use std::{
 #[derive(Debug)]
 pub enum Error {
     Certificate(super::certificate::Error),
-    Code,
+    Code(u8),
     Failure(super::failure::Error),
     Input(super::input::Error),
-    Protocol,
+    Protocol(Vec<u8>),
     Redirect(super::redirect::Error),
     Stream(glib::Error, Vec<u8>),
     Success(super::success::Error),
@@ -22,8 +22,8 @@ impl Display for Error {
             Self::Certificate(e) => {
                 write!(f, "Certificate error: {e}")
             }
-            Self::Code => {
-                write!(f, "Code group error")
+            Self::Code(b) => {
+                write!(f, "Unexpected status code byte: {b}")
             }
             Self::Failure(e) => {
                 write!(f, "Failure error: {e}")
@@ -31,7 +31,7 @@ impl Display for Error {
             Self::Input(e) => {
                 write!(f, "Input error: {e}")
             }
-            Self::Protocol => {
+            Self::Protocol(..) => {
                 write!(f, "Protocol error")
             }
             Self::Redirect(e) => {
@@ -45,6 +45,25 @@ impl Display for Error {
             }
             Self::Utf8Error(e) => {
                 write!(f, "UTF-8 decode error: {e}")
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum HeaderBytesError {
+    Len,
+    End,
+}
+
+impl Display for HeaderBytesError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            Self::Len => {
+                write!(f, "Unexpected header length")
+            }
+            Self::End => {
+                write!(f, "Unexpected header end")
             }
         }
     }

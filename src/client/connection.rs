@@ -3,7 +3,7 @@ pub mod request;
 pub mod response;
 
 pub use error::Error;
-pub use request::Request;
+pub use request::{Mode, Request};
 pub use response::Response;
 
 // Local dependencies
@@ -74,36 +74,42 @@ impl Connection {
             Some(&cancellable.clone()),
             move |result| match result {
                 Ok(_) => match request {
-                    Request::Gemini { .. } => Response::from_connection_async(
-                        self,
-                        priority,
-                        cancellable,
-                        |result, connection| {
-                            callback(match result {
-                                Ok(response) => Ok((response, connection)),
-                                Err(e) => Err(Error::Response(e)),
-                            })
-                        },
-                    ),
+                    Request::Gemini { mode, .. } => match mode {
+                        Mode::All => todo!(),
+                        Mode::Header => Response::header_from_connection_async(
+                            self,
+                            priority,
+                            cancellable,
+                            |result, connection| {
+                                callback(match result {
+                                    Ok(response) => Ok((response, connection)),
+                                    Err(e) => Err(Error::Response(e)),
+                                })
+                            },
+                        ),
+                    },
                     // Make sure **all data bytes** sent to the destination
                     // > A partial write is performed with the size of a message block, which is 16kB
                     // > https://docs.openssl.org/3.0/man3/SSL_write/#notes
-                    Request::Titan { data, .. } => output_stream.write_all_async(
+                    Request::Titan { data, mode, .. } => output_stream.write_all_async(
                         data,
                         priority,
                         Some(&cancellable.clone()),
                         move |result| match result {
-                            Ok(_) => Response::from_connection_async(
-                                self,
-                                priority,
-                                cancellable,
-                                |result, connection| {
-                                    callback(match result {
-                                        Ok(response) => Ok((response, connection)),
-                                        Err(e) => Err(Error::Response(e)),
-                                    })
-                                },
-                            ),
+                            Ok(_) => match mode {
+                                Mode::All => todo!(),
+                                Mode::Header => Response::header_from_connection_async(
+                                    self,
+                                    priority,
+                                    cancellable,
+                                    |result, connection| {
+                                        callback(match result {
+                                            Ok(response) => Ok((response, connection)),
+                                            Err(e) => Err(Error::Response(e)),
+                                        })
+                                    },
+                                ),
+                            },
                             Err((b, e)) => callback(Err(Error::Request(b, e))),
                         },
                     ),
@@ -124,12 +130,12 @@ impl Connection {
     }
 }
 
-// Helpers
+// Tools
 
 /// Setup new [TlsClientConnection](https://docs.gtk.org/gio/iface.TlsClientConnection.html)
 /// wrapper for [SocketConnection](https://docs.gtk.org/gio/class.SocketConnection.html)
 /// using `server_identity` as the [SNI](https://geminiprotocol.net/docs/protocol-specification.gmi#server-name-indication)
-pub fn new_tls_client_connection(
+fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
     is_session_resumption: bool,
