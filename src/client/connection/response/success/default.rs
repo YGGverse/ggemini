@@ -14,11 +14,11 @@ pub struct Default {
 impl Default {
     // Constructors
 
-    pub fn parse(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         if !buffer.starts_with(CODE) {
             return Err(Error::Code);
         }
-        let header = Header::parse(buffer).map_err(Error::Header)?;
+        let header = Header::from_utf8(buffer).map_err(Error::Header)?;
         Ok(Self {
             content: buffer
                 .get(header.len() + 1..)
@@ -31,7 +31,8 @@ impl Default {
 
 #[test]
 fn test() {
-    let default = Default::parse("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes()).unwrap();
+    let default =
+        Default::from_utf8("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes()).unwrap();
     assert_eq!(default.header.mime().unwrap(), "text/gemini");
     assert_eq!(default.content, None)
 }

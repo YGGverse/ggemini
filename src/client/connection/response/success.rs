@@ -15,11 +15,11 @@ impl Success {
     // Constructors
 
     /// Parse new `Self` from buffer bytes
-    pub fn parse(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         if buffer.first().is_none_or(|b| *b != CODE) {
             return Err(Error::Code);
         }
-        match Default::parse(buffer) {
+        match Default::from_utf8(buffer) {
             Ok(default) => Ok(Self::Default(default)),
             Err(e) => Err(Error::Default(e)),
         }
@@ -28,7 +28,7 @@ impl Success {
 
 #[test]
 fn test() {
-    match Success::parse("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes()).unwrap() {
+    match Success::from_utf8("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes()).unwrap() {
         Success::Default(default) => {
             assert_eq!(default.header.mime().unwrap(), "text/gemini");
             assert_eq!(default.content, None)

@@ -6,7 +6,7 @@ pub struct Header(Vec<u8>);
 impl Header {
     // Constructors
 
-    pub fn parse(buffer: &[u8]) -> Result<Self, Error> {
+    pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         if !buffer.starts_with(super::CODE) {
             return Err(Error::Code);
         }

@@ -49,7 +49,7 @@ impl Response {
                                     Ok(input) => Ok(Self::Input(input)),
                                     Err(e) => Err(Error::Input(e)),
                                 },
-                                b'2' => match Success::parse(&buffer) {
+                                b'2' => match Success::from_utf8(&buffer) {
                                     Ok(success) => Ok(Self::Success(success)),
                                     Err(e) => Err(Error::Success(e)),
                                 },
