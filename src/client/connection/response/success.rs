@@ -4,7 +4,7 @@ pub mod error;
 pub use default::Default;
 pub use error::Error;
 
-pub const CODE: u8 = b'2';
+const CODE: u8 = b'2';
 
 pub enum Success {
     Default(Default),

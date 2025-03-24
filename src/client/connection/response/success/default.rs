@@ -4,7 +4,7 @@ pub mod header;
 pub use error::Error;
 pub use header::Header;
 
-pub const CODE: &[u8] = b"20";
+const CODE: &[u8] = b"20";
 
 pub struct Default {
     pub header: Header,
