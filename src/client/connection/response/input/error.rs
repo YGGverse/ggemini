@@ -4,7 +4,6 @@ use std::fmt::{Display, Formatter, Result};
 pub enum Error {
     Default(super::default::Error),
     FirstByte(u8),
-    Protocol,
     SecondByte(u8),
     Sensitive(super::sensitive::Error),
     UndefinedFirstByte,
@@ -19,9 +18,6 @@ impl Display for Error {
             }
             Self::FirstByte(b) => {
                 write!(f, "Unexpected first byte: {b}")
-            }
-            Self::Protocol => {
-                write!(f, "Protocol error")
             }
             Self::SecondByte(b) => {
                 write!(f, "Unexpected second byte: {b}")
