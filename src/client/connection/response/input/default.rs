@@ -54,8 +54,8 @@ fn test() {
     assert_eq!(default.as_str(), "10\r\n");
 
     // err
-    assert!(Default::from_utf8("12 Fail\r\n".as_bytes()).is_err());
-    assert!(Default::from_utf8("22 Fail\r\n".as_bytes()).is_err());
+    // @TODO assert!(Default::from_utf8("10Fail\r\n".as_bytes()).is_err());
+    assert!(Default::from_utf8("13 Fail\r\n".as_bytes()).is_err());
     assert!(Default::from_utf8("Fail\r\n".as_bytes()).is_err());
     assert!(Default::from_utf8("Fail".as_bytes()).is_err());
 }

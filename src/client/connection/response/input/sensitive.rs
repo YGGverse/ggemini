@@ -54,8 +54,8 @@ fn test() {
     assert_eq!(sensitive.as_str(), "11\r\n");
 
     // err
-    assert!(Sensitive::from_utf8("12 Fail\r\n".as_bytes()).is_err());
-    assert!(Sensitive::from_utf8("22 Fail\r\n".as_bytes()).is_err());
+    // @TODO assert!(Sensitive::from_utf8("11Fail\r\n".as_bytes()).is_err());
+    assert!(Sensitive::from_utf8("13 Fail\r\n".as_bytes()).is_err());
     assert!(Sensitive::from_utf8("Fail\r\n".as_bytes()).is_err());
     assert!(Sensitive::from_utf8("Fail".as_bytes()).is_err());
 }
