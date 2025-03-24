@@ -75,7 +75,7 @@ impl Connection {
             move |result| match result {
                 Ok(_) => match request {
                     Request::Gemini { mode, .. } => match mode {
-                        Mode::Header => Response::header_from_connection_async(
+                        Mode::HeaderOnly => Response::header_from_connection_async(
                             self,
                             priority,
                             cancellable,
@@ -96,7 +96,7 @@ impl Connection {
                         Some(&cancellable.clone()),
                         move |result| match result {
                             Ok(_) => match mode {
-                                Mode::Header => Response::header_from_connection_async(
+                                Mode::HeaderOnly => Response::header_from_connection_async(
                                     self,
                                     priority,
                                     cancellable,

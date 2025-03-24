@@ -86,7 +86,7 @@ fn test_gemini_header() {
     assert_eq!(
         Request::Gemini {
             uri: Uri::parse(REQUEST, UriFlags::NONE).unwrap(),
-            mode: Mode::Header
+            mode: Mode::HeaderOnly
         }
         .header(),
         format!("{REQUEST}\r\n")
@@ -111,7 +111,7 @@ fn test_titan_header() {
             data: Bytes::from(DATA),
             mime: Some(MIME.to_string()),
             token: Some(TOKEN.to_string()),
-            mode: Mode::Header
+            mode: Mode::HeaderOnly
         }
         .header(),
         format!(
