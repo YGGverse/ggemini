@@ -20,8 +20,19 @@ impl Default {
         }
         let header = Header::parse(buffer).map_err(Error::Header)?;
         Ok(Self {
-            content: buffer.get(header.len() + 1..).map(|v| v.to_vec()),
+            content: buffer
+                .get(header.len() + 1..)
+                .filter(|s| !s.is_empty())
+                .map(|v| v.to_vec()),
             header,
         })
     }
+}
+
+#[test]
+fn test() {
+    let default =
+        Default::parse(format!("20 text/gemini; charset=utf-8; lang=en\r\n").as_bytes()).unwrap();
+    assert_eq!(default.header.mime().unwrap(), "text/gemini");
+    assert_eq!(default.content, None)
 }

@@ -28,6 +28,11 @@ impl Success {
 
 #[test]
 fn test() {
-    // let default = Success::parse("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes());
-    todo!()
+    match Success::parse(format!("20 text/gemini; charset=utf-8; lang=en\r\n").as_bytes()).unwrap()
+    {
+        Success::Default(default) => {
+            assert_eq!(default.header.mime().unwrap(), "text/gemini");
+            assert_eq!(default.content, None)
+        }
+    }
 }
