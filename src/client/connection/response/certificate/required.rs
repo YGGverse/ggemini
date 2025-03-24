@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-const CODE: &[u8] = b"60";
+/// [Certificate Required](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60) status code
+pub const CODE: &[u8] = b"60";
 
-/// Hold header `String` for [60](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60) status code
+/// Hold header `String` for [Certificate Required](https://geminiprotocol.net/docs/protocol-specification.gmi#status-60) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
 pub struct Required(String);

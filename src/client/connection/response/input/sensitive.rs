@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-const CODE: &[u8] = b"11";
+/// [Sensitive Input](https://geminiprotocol.net/docs/protocol-specification.gmi#status-11-sensitive-input) status code
+pub const CODE: &[u8] = b"11";
 
-/// Hold header `String` for [11](https://geminiprotocol.net/docs/protocol-specification.gmi#status-11-sensitive-input) status code
+/// Hold header `String` for [Sensitive Input](https://geminiprotocol.net/docs/protocol-specification.gmi#status-11-sensitive-input) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
 pub struct Sensitive(String);

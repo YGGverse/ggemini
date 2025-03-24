@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-const CODE: &[u8] = b"10";
+/// [Input Expected](https://geminiprotocol.net/docs/protocol-specification.gmi#status-10) status code
+pub const CODE: &[u8] = b"10";
 
-/// Hold header `String` for [10](https://geminiprotocol.net/docs/protocol-specification.gmi#status-10) status code
+/// Hold header `String` for [Input Expected](https://geminiprotocol.net/docs/protocol-specification.gmi#status-10) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
 pub struct Default(String);

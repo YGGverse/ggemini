@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-const CODE: &[u8] = b"62";
+/// [Not Valid](https://geminiprotocol.net/docs/protocol-specification.gmi#status-62) status code
+pub const CODE: &[u8] = b"62";
 
-/// Hold header `String` for [62](https://geminiprotocol.net/docs/protocol-specification.gmi#status-62) status code
+/// Hold header `String` for [Not Valid](https://geminiprotocol.net/docs/protocol-specification.gmi#status-62) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
 pub struct NotValid(String);

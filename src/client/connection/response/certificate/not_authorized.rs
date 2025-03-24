@@ -1,9 +1,10 @@
 pub mod error;
 pub use error::Error;
 
-const CODE: &[u8] = b"61";
+/// [Not Authorized](https://geminiprotocol.net/docs/protocol-specification.gmi#status-61) status code
+pub const CODE: &[u8] = b"61";
 
-/// Hold header `String` for [61](https://geminiprotocol.net/docs/protocol-specification.gmi#status-61) status code
+/// Hold header `String` for [Not Authorized](https://geminiprotocol.net/docs/protocol-specification.gmi#status-61) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
 pub struct NotAuthorized(String);

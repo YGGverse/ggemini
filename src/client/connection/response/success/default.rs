@@ -4,8 +4,12 @@ pub mod header;
 pub use error::Error;
 pub use header::Header;
 
-const CODE: &[u8] = b"20";
+/// [Success](https://geminiprotocol.net/docs/protocol-specification.gmi#success) status code
+pub const CODE: &[u8] = b"20";
 
+/// Holder for [Success](https://geminiprotocol.net/docs/protocol-specification.gmi#success) status code
+/// * this response type MAY contain body data
+/// * the header has closed members to require valid construction
 pub struct Default {
     pub header: Header,
     pub content: Option<Vec<u8>>,
