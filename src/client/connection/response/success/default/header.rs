@@ -12,7 +12,7 @@ impl Header {
         }
         Ok(Self(
             crate::client::connection::response::header_bytes(buffer)
-                .map_err(|e| Error::Header(e))?
+                .map_err(Error::Header)?
                 .to_vec(),
         ))
     }
@@ -23,7 +23,7 @@ impl Header {
     pub fn mime(&self) -> Result<String, Error> {
         glib::Regex::split_simple(
             r"^\d{2}\s([^\/]+\/[^\s;]+)",
-            std::str::from_utf8(&self.0).map_err(|e| Error::Utf8Error(e))?,
+            std::str::from_utf8(&self.0).map_err(Error::Utf8Error)?,
             glib::RegexCompileFlags::DEFAULT,
             glib::RegexMatchFlags::DEFAULT,
         )
@@ -35,6 +35,10 @@ impl Header {
 
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
     }
 
     pub fn as_bytes(&self) -> &[u8] {

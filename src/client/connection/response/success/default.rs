@@ -18,7 +18,7 @@ impl Default {
         if !buffer.starts_with(CODE) {
             return Err(Error::Code);
         }
-        let header = Header::parse(buffer).map_err(|e| Error::Header(e))?;
+        let header = Header::parse(buffer).map_err(Error::Header)?;
         Ok(Self {
             content: buffer.get(header.len() + 1..).map(|v| v.to_vec()),
             header,

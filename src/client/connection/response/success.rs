@@ -16,10 +16,10 @@ impl Success {
 
     /// Parse new `Self` from buffer bytes
     pub fn parse(buffer: &[u8]) -> Result<Self, Error> {
-        if !buffer.first().is_some_and(|b| *b == CODE) {
+        if buffer.first().is_none_or(|b| *b != CODE) {
             return Err(Error::Code);
         }
-        match Default::parse(&buffer) {
+        match Default::parse(buffer) {
             Ok(default) => Ok(Self::Default(default)),
             Err(e) => Err(Error::Default(e)),
         }
