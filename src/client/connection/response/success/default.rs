@@ -31,8 +31,7 @@ impl Default {
 
 #[test]
 fn test() {
-    let default =
-        Default::parse(format!("20 text/gemini; charset=utf-8; lang=en\r\n").as_bytes()).unwrap();
+    let default = Default::parse("20 text/gemini; charset=utf-8; lang=en\r\n".as_bytes()).unwrap();
     assert_eq!(default.header.mime().unwrap(), "text/gemini");
     assert_eq!(default.content, None)
 }
