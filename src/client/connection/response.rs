@@ -137,7 +137,7 @@ fn header_bytes(buffer: &[u8]) -> Result<&[u8], HeaderBytesError> {
         if *b == b'\r' {
             let n = i + 1;
             if buffer.get(n).is_some_and(|b| *b == b'\n') {
-                return Ok(&buffer[..n]);
+                return Ok(&buffer[..n + 1]);
             }
             break;
         }
