@@ -66,11 +66,11 @@ impl Input {
 #[test]
 fn test() {
     fn t(source: &str, message: Option<&str>) {
-        let bytes = source.as_bytes();
-        let input = Input::from_utf8(bytes).unwrap();
-        assert_eq!(input.message(), message);
-        assert_eq!(input.as_str(), source);
-        assert_eq!(input.as_bytes(), bytes);
+        let b = source.as_bytes();
+        let i = Input::from_utf8(b).unwrap();
+        assert_eq!(i.message(), message);
+        assert_eq!(i.as_str(), source);
+        assert_eq!(i.as_bytes(), b);
     }
     // 10
     t("10 Default\r\n", Some("Default"));
