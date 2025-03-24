@@ -1,19 +1,24 @@
 pub mod error;
-pub use error::Error;
+pub mod not_authorized;
+pub mod not_valid;
+pub mod required;
 
-const REQUIRED: (u8, &str) = (60, "Certificate required");
-const NOT_AUTHORIZED: (u8, &str) = (61, "Certificate not authorized");
-const NOT_VALID: (u8, &str) = (62, "Certificate not valid");
+pub use error::Error;
+pub use not_authorized::NotAuthorized;
+pub use not_valid::NotValid;
+pub use required::Required;
+
+const CODE: u8 = b'6';
 
 /// 6* status code group
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#client-certificates
 pub enum Certificate {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-60
-    Required { message: Option<String> },
+    Required(Required),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-61-certificate-not-authorized
-    NotAuthorized { message: Option<String> },
+    NotAuthorized(NotAuthorized),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-62-certificate-not-valid
-    NotValid { message: Option<String> },
+    NotValid(NotValid),
 }
 
 impl Certificate {
@@ -21,95 +26,72 @@ impl Certificate {
 
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
-        use std::str::FromStr;
-        match std::str::from_utf8(buffer) {
-            Ok(header) => Self::from_str(header),
-            Err(e) => Err(Error::Utf8Error(e)),
+        match buffer.first() {
+            Some(b) => match *b {
+                CODE => match buffer.get(1) {
+                    Some(b) => match *b {
+                        b'0' => Ok(Self::Required(
+                            Required::from_utf8(buffer).map_err(Error::Required)?,
+                        )),
+                        b'1' => Ok(Self::NotAuthorized(
+                            NotAuthorized::from_utf8(buffer).map_err(Error::NotAuthorized)?,
+                        )),
+                        b'2' => Ok(Self::NotValid(
+                            NotValid::from_utf8(buffer).map_err(Error::NotValid)?,
+                        )),
+                        b => Err(Error::SecondByte(b)),
+                    },
+                    None => Err(Error::UndefinedSecondByte),
+                },
+                b => Err(Error::FirstByte(b)),
+            },
+            None => Err(Error::UndefinedFirstByte),
         }
     }
 
     // Getters
 
-    pub fn to_code(&self) -> u8 {
-        match self {
-            Self::Required { .. } => REQUIRED,
-            Self::NotAuthorized { .. } => NOT_AUTHORIZED,
-            Self::NotValid { .. } => NOT_VALID,
-        }
-        .0
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Required { message } => message,
-            Self::NotAuthorized { message } => message,
-            Self::NotValid { message } => message,
+            Self::Required(required) => required.message(),
+            Self::NotAuthorized(not_authorized) => not_authorized.message(),
+            Self::NotValid(not_valid) => not_valid.message(),
         }
-        .as_deref()
     }
-}
 
-impl std::fmt::Display for Certificate {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Required { .. } => REQUIRED,
-                Self::NotAuthorized { .. } => NOT_AUTHORIZED,
-                Self::NotValid { .. } => NOT_VALID,
-            }
-            .1
-        )
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Required(required) => required.as_str(),
+            Self::NotAuthorized(not_authorized) => not_authorized.as_str(),
+            Self::NotValid(not_valid) => not_valid.as_str(),
+        }
     }
-}
 
-impl std::str::FromStr for Certificate {
-    type Err = Error;
-    fn from_str(header: &str) -> Result<Self, Self::Err> {
-        if let Some(postfix) = header.strip_prefix("60") {
-            return Ok(Self::Required {
-                message: message(postfix),
-            });
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Required(required) => required.as_bytes(),
+            Self::NotAuthorized(not_authorized) => not_authorized.as_bytes(),
+            Self::NotValid(not_valid) => not_valid.as_bytes(),
         }
-        if let Some(postfix) = header.strip_prefix("61") {
-            return Ok(Self::NotAuthorized {
-                message: message(postfix),
-            });
-        }
-        if let Some(postfix) = header.strip_prefix("62") {
-            return Ok(Self::NotValid {
-                message: message(postfix),
-            });
-        }
-        Err(Error::Code)
-    }
-}
-
-// Tools
-
-fn message(value: &str) -> Option<String> {
-    let value = value.trim();
-    if value.is_empty() {
-        None
-    } else {
-        Some(value.to_string())
     }
 }
 
 #[test]
-fn test_from_str() {
-    use std::str::FromStr;
-
-    let required = Certificate::from_str("60 Message\r\n").unwrap();
-
-    assert_eq!(required.message(), Some("Message"));
-    assert_eq!(required.to_code(), REQUIRED.0);
-    assert_eq!(required.to_string(), REQUIRED.1);
-
-    let required = Certificate::from_str("60\r\n").unwrap();
-
-    assert_eq!(required.message(), None);
-    assert_eq!(required.to_code(), REQUIRED.0);
-    assert_eq!(required.to_string(), REQUIRED.1);
+fn test() {
+    fn t(source: &str, message: Option<&str>) {
+        let b = source.as_bytes();
+        let c = Certificate::from_utf8(b).unwrap();
+        assert_eq!(c.message(), message);
+        assert_eq!(c.as_str(), source);
+        assert_eq!(c.as_bytes(), b);
+    }
+    // 60
+    t("60 Required\r\n", Some("Required"));
+    t("60\r\n", None);
+    // 61
+    t("61 Not Authorized\r\n", Some("Not Authorized"));
+    t("61\r\n", None);
+    // 62
+    t("61 Not Valid\r\n", Some("Not Valid"));
+    t("61\r\n", None);
 }
