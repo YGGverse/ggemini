@@ -38,10 +38,52 @@ impl Failure {
 
     // Getters
 
+    /// Get optional message for `Self`
+    /// * return `None` if the message is empty
     pub fn message(&self) -> Option<&str> {
         match self {
             Self::Permanent(permanent) => permanent.message(),
             Self::Temporary(temporary) => temporary.message(),
         }
+    }
+
+    /// Get optional message for `Self`
+    /// * if the optional message not provided by the server, return children `DEFAULT_MESSAGE`
+    pub fn message_or_default(&self) -> &str {
+        match self {
+            Self::Permanent(permanent) => permanent.message_or_default(),
+            Self::Temporary(temporary) => temporary.message_or_default(),
+        }
+    }
+
+    /// Get header string of `Self`
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Permanent(permanent) => permanent.as_str(),
+            Self::Temporary(temporary) => temporary.as_str(),
+        }
+    }
+
+    /// Get header bytes of `Self`
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Permanent(permanent) => permanent.as_bytes(),
+            Self::Temporary(temporary) => temporary.as_bytes(),
+        }
+    }
+}
+
+#[test]
+fn test() {
+    fn t(source: String, message: Option<&str>) {
+        let b = source.as_bytes();
+        let i = Failure::from_utf8(b).unwrap();
+        assert_eq!(i.message(), message);
+        assert_eq!(i.as_str(), source);
+        assert_eq!(i.as_bytes(), b);
+    }
+    for code in [40, 41, 42, 43, 44, 50, 51, 52, 53, 59] {
+        t(format!("{code} Message\r\n"), Some("Message"));
+        t(format!("{code}\r\n"), None);
     }
 }
