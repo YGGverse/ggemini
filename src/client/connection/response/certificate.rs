@@ -51,6 +51,8 @@ impl Certificate {
 
     // Getters
 
+    /// Get optional message for `Self`
+    /// * return `None` if the message is empty (not provided by server)
     pub fn message(&self) -> Option<&str> {
         match self {
             Self::Required(required) => required.message(),
@@ -59,6 +61,17 @@ impl Certificate {
         }
     }
 
+    /// Get optional message for `Self`
+    /// * if the optional message not provided by the server, return children `DEFAULT_MESSAGE`
+    pub fn message_or_default(&self) -> &str {
+        match self {
+            Self::Required(required) => required.message_or_default(),
+            Self::NotAuthorized(not_authorized) => not_authorized.message_or_default(),
+            Self::NotValid(not_valid) => not_valid.message_or_default(),
+        }
+    }
+
+    /// Get header string of `Self`
     pub fn as_str(&self) -> &str {
         match self {
             Self::Required(required) => required.as_str(),
@@ -67,6 +80,7 @@ impl Certificate {
         }
     }
 
+    /// Get header bytes of `Self`
     pub fn as_bytes(&self) -> &[u8] {
         match self {
             Self::Required(required) => required.as_bytes(),

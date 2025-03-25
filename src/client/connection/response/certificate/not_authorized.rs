@@ -4,6 +4,11 @@ pub use error::Error;
 /// [Not Authorized](https://geminiprotocol.net/docs/protocol-specification.gmi#status-61) status code
 pub const CODE: &[u8] = b"61";
 
+/// Default message if the optional value was not provided by the server
+/// * useful to skip match cases in external applications,
+///   by using `super::message_or_default` method.
+pub const DEFAULT_MESSAGE: &str = "Certificate is not authorized";
+
 /// Hold header `String` for [Not Authorized](https://geminiprotocol.net/docs/protocol-specification.gmi#status-61) status code
 /// * this response type does not contain body data
 /// * the header member is closed to require valid construction
@@ -29,15 +34,23 @@ impl NotAuthorized {
     // Getters
 
     /// Get optional message for `Self`
-    /// * return `None` if the message is empty
+    /// * return `None` if the message is empty (not provided by server)
     pub fn message(&self) -> Option<&str> {
         self.0.get(2..).map(|s| s.trim()).filter(|x| !x.is_empty())
     }
 
+    /// Get optional message for `Self`
+    /// * if the optional message not provided by the server, return `DEFAULT_MESSAGE`
+    pub fn message_or_default(&self) -> &str {
+        self.message().unwrap_or(DEFAULT_MESSAGE)
+    }
+
+    /// Get header string of `Self`
     pub fn as_str(&self) -> &str {
         &self.0
     }
 
+    /// Get header bytes of `Self`
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
