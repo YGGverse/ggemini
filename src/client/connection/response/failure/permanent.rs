@@ -112,26 +112,15 @@ impl Permanent {
 
 #[test]
 fn test() {
-    fn t(source: &str, message: Option<&str>) {
+    fn t(source: String, message: Option<&str>) {
         let b = source.as_bytes();
         let i = Permanent::from_utf8(b).unwrap();
         assert_eq!(i.message(), message);
         assert_eq!(i.as_str(), source);
         assert_eq!(i.as_bytes(), b);
     }
-    // 50
-    t("50 Message\r\n", Some("Message"));
-    t("50\r\n", None);
-    // 51
-    t("51 Message\r\n", Some("Message"));
-    t("51\r\n", None);
-    // 52
-    t("52 Message\r\n", Some("Message"));
-    t("52\r\n", None);
-    // 53
-    t("53 Message\r\n", Some("Message"));
-    t("53\r\n", None);
-    // 59
-    t("59 Message\r\n", Some("Message"));
-    t("59\r\n", None);
+    for code in [50, 51, 52, 53, 59] {
+        t(format!("{code} Message\r\n"), Some("Message"));
+        t(format!("{code}\r\n"), None);
+    }
 }
