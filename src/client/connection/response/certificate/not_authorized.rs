@@ -59,13 +59,17 @@ impl NotAuthorized {
 #[test]
 fn test() {
     // ok
-    let not_authorized = NotAuthorized::from_utf8("61 Not Authorized\r\n".as_bytes()).unwrap();
-    assert_eq!(not_authorized.message(), Some("Not Authorized"));
-    assert_eq!(not_authorized.as_str(), "61 Not Authorized\r\n");
+    let na = NotAuthorized::from_utf8("61 Not Authorized\r\n".as_bytes()).unwrap();
+    assert_eq!(na.message(), Some("Not Authorized"));
+    assert_eq!(na.message_or_default(), "Not Authorized");
+    assert_eq!(na.as_str(), "61 Not Authorized\r\n");
+    assert_eq!(na.as_bytes(), "61 Not Authorized\r\n".as_bytes());
 
-    let not_authorized = NotAuthorized::from_utf8("61\r\n".as_bytes()).unwrap();
-    assert_eq!(not_authorized.message(), None);
-    assert_eq!(not_authorized.as_str(), "61\r\n");
+    let na = NotAuthorized::from_utf8("61\r\n".as_bytes()).unwrap();
+    assert_eq!(na.message(), None);
+    assert_eq!(na.message_or_default(), DEFAULT_MESSAGE);
+    assert_eq!(na.as_str(), "61\r\n");
+    assert_eq!(na.as_bytes(), "61\r\n".as_bytes());
 
     // err
     assert!(NotAuthorized::from_utf8("62 Fail\r\n".as_bytes()).is_err());

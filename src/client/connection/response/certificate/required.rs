@@ -59,13 +59,17 @@ impl Required {
 #[test]
 fn test() {
     // ok
-    let required = Required::from_utf8("60 Required\r\n".as_bytes()).unwrap();
-    assert_eq!(required.message(), Some("Required"));
-    assert_eq!(required.as_str(), "60 Required\r\n");
+    let r = Required::from_utf8("60 Required\r\n".as_bytes()).unwrap();
+    assert_eq!(r.message(), Some("Required"));
+    assert_eq!(r.message_or_default(), "Required");
+    assert_eq!(r.as_str(), "60 Required\r\n");
+    assert_eq!(r.as_bytes(), "60 Required\r\n".as_bytes());
 
-    let required = Required::from_utf8("60\r\n".as_bytes()).unwrap();
-    assert_eq!(required.message(), None);
-    assert_eq!(required.as_str(), "60\r\n");
+    let r = Required::from_utf8("60\r\n".as_bytes()).unwrap();
+    assert_eq!(r.message(), None);
+    assert_eq!(r.message_or_default(), DEFAULT_MESSAGE);
+    assert_eq!(r.as_str(), "60\r\n");
+    assert_eq!(r.as_bytes(), "60\r\n".as_bytes());
 
     // err
     assert!(Required::from_utf8("62 Fail\r\n".as_bytes()).is_err());

@@ -59,13 +59,17 @@ impl NotValid {
 #[test]
 fn test() {
     // ok
-    let not_valid = NotValid::from_utf8("62 Not Valid\r\n".as_bytes()).unwrap();
-    assert_eq!(not_valid.message(), Some("Not Valid"));
-    assert_eq!(not_valid.as_str(), "62 Not Valid\r\n");
+    let nv = NotValid::from_utf8("62 Not Valid\r\n".as_bytes()).unwrap();
+    assert_eq!(nv.message(), Some("Not Valid"));
+    assert_eq!(nv.message_or_default(), "Not Valid");
+    assert_eq!(nv.as_str(), "62 Not Valid\r\n");
+    assert_eq!(nv.as_bytes(), "62 Not Valid\r\n".as_bytes());
 
-    let not_valid = NotValid::from_utf8("62\r\n".as_bytes()).unwrap();
-    assert_eq!(not_valid.message(), None);
-    assert_eq!(not_valid.as_str(), "62\r\n");
+    let nv = NotValid::from_utf8("62\r\n".as_bytes()).unwrap();
+    assert_eq!(nv.message(), None);
+    assert_eq!(nv.message_or_default(), DEFAULT_MESSAGE);
+    assert_eq!(nv.as_str(), "62\r\n");
+    assert_eq!(nv.as_bytes(), "62\r\n".as_bytes());
 
     // err
     // @TODO assert!(NotValid::from_utf8("62Fail\r\n".as_bytes()).is_err());
