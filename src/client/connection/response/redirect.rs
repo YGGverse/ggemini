@@ -1,16 +1,23 @@
 pub mod error;
-pub use error::Error;
+pub mod permanent;
+pub mod temporary;
 
-use glib::{GStringPtr, Uri, UriFlags};
+pub use error::{Error, UriError};
+pub use permanent::Permanent;
+pub use temporary::Temporary;
 
-const TEMPORARY: (u8, &str) = (30, "Temporary redirect");
-const PERMANENT: (u8, &str) = (31, "Permanent redirect");
+// Local dependencies
 
+use glib::{Uri, UriFlags};
+
+const CODE: u8 = b'3';
+
+/// [Redirection](https://geminiprotocol.net/docs/protocol-specification.gmi#redirection) statuses
 pub enum Redirect {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-30-temporary-redirection
-    Temporary { target: String },
+    Temporary(Temporary),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-31-permanent-redirection
-    Permanent { target: String },
+    Permanent(Permanent),
 }
 
 impl Redirect {
@@ -18,210 +25,161 @@ impl Redirect {
 
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
-        use std::str::FromStr;
-        match std::str::from_utf8(buffer) {
-            Ok(header) => Self::from_str(header),
-            Err(e) => Err(Error::Utf8Error(e)),
-        }
-    }
-
-    // Convertors
-
-    pub fn to_code(&self) -> u8 {
-        match self {
-            Self::Permanent { .. } => PERMANENT,
-            Self::Temporary { .. } => TEMPORARY,
-        }
-        .0
-    }
-
-    /// Resolve [specification-compatible](https://geminiprotocol.net/docs/protocol-specification.gmi#redirection),
-    /// absolute [Uri](https://docs.gtk.org/glib/struct.Uri.html) for `target` using `base`
-    /// * fragment implementation uncompleted @TODO
-    pub fn to_uri(&self, base: &Uri) -> Result<Uri, Error> {
-        match Uri::build(
-            UriFlags::NONE,
-            base.scheme().as_str(),
-            None, // unexpected
-            base.host().as_deref(),
-            base.port(),
-            base.path().as_str(),
-            // > If a server sends a redirection in response to a request with a query string,
-            // > the client MUST NOT apply the query string to the new location
-            None,
-            // > A server SHOULD NOT include fragments in redirections,
-            // > but if one is given, and a client already has a fragment it could apply (from the original URI),
-            // > it is up to the client which fragment to apply.
-            None, // @TODO
-        )
-        .parse_relative(
-            &{
-                // URI started with double slash yet not supported by Glib function
-                // https://datatracker.ietf.org/doc/html/rfc3986#section-4.2
-                let t = self.target();
-                match t.strip_prefix("//") {
-                    Some(p) => {
-                        let postfix = p.trim_start_matches(":");
-                        format!(
-                            "{}://{}",
-                            base.scheme(),
-                            if postfix.is_empty() {
-                                match base.host() {
-                                    Some(h) => format!("{h}/"),
-                                    None => return Err(Error::BaseHost),
-                                }
-                            } else {
-                                postfix.to_string()
-                            }
-                        )
-                    }
-                    None => t.to_string(),
-                }
+        match buffer.first() {
+            Some(b) => match *b {
+                CODE => match buffer.get(1) {
+                    Some(b) => match *b {
+                        b'0' => Ok(Self::Temporary(
+                            Temporary::from_utf8(buffer).map_err(Error::Temporary)?,
+                        )),
+                        b'1' => Ok(Self::Permanent(
+                            Permanent::from_utf8(buffer).map_err(Error::Permanent)?,
+                        )),
+                        b => Err(Error::SecondByte(b)),
+                    },
+                    None => Err(Error::UndefinedSecondByte),
+                },
+                b => Err(Error::FirstByte(b)),
             },
-            UriFlags::NONE,
-        ) {
-            Ok(absolute) => Ok(absolute),
-            Err(e) => Err(Error::Uri(e)),
+            None => Err(Error::UndefinedFirstByte),
         }
     }
 
     // Getters
 
-    pub fn target(&self) -> &str {
+    pub fn target(&self) -> Result<&str, Error> {
         match self {
-            Self::Permanent { target } => target,
-            Self::Temporary { target } => target,
+            Self::Temporary(temporary) => temporary.target().map_err(Error::Temporary),
+            Self::Permanent(permanent) => permanent.target().map_err(Error::Permanent),
+        }
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Temporary(temporary) => temporary.as_str(),
+            Self::Permanent(permanent) => permanent.as_str(),
+        }
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Temporary(temporary) => temporary.as_bytes(),
+            Self::Permanent(permanent) => permanent.as_bytes(),
+        }
+    }
+
+    pub fn uri(&self, base: &Uri) -> Result<Uri, Error> {
+        match self {
+            Self::Temporary(temporary) => temporary.uri(base).map_err(Error::Temporary),
+            Self::Permanent(permanent) => permanent.uri(base).map_err(Error::Permanent),
         }
     }
 }
 
-impl std::fmt::Display for Redirect {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Permanent { .. } => PERMANENT,
-                Self::Temporary { .. } => TEMPORARY,
+// Tools
+
+/// Resolve [specification-compatible](https://geminiprotocol.net/docs/protocol-specification.gmi#redirection),
+/// absolute [Uri](https://docs.gtk.org/glib/struct.Uri.html) for `target` using `base`
+/// * fragment implementation uncompleted @TODO
+fn uri(target: &str, base: &Uri) -> Result<Uri, UriError> {
+    match Uri::build(
+        UriFlags::NONE,
+        base.scheme().as_str(),
+        None, // unexpected
+        base.host().as_deref(),
+        base.port(),
+        base.path().as_str(),
+        // > If a server sends a redirection in response to a request with a query string,
+        // > the client MUST NOT apply the query string to the new location
+        None,
+        // > A server SHOULD NOT include fragments in redirections,
+        // > but if one is given, and a client already has a fragment it could apply (from the original URI),
+        // > it is up to the client which fragment to apply.
+        None, // @TODO
+    )
+    .parse_relative(
+        &{
+            // URI started with double slash yet not supported by Glib function
+            // https://datatracker.ietf.org/doc/html/rfc3986#section-4.2
+            let t = target;
+            match t.strip_prefix("//") {
+                Some(p) => {
+                    let postfix = p.trim_start_matches(":");
+                    format!(
+                        "{}://{}",
+                        base.scheme(),
+                        if postfix.is_empty() {
+                            match base.host() {
+                                Some(h) => format!("{h}/"),
+                                None => return Err(UriError::BaseHost),
+                            }
+                        } else {
+                            postfix.to_string()
+                        }
+                    )
+                }
+                None => t.to_string(),
             }
-            .1
-        )
-    }
-}
-
-impl std::str::FromStr for Redirect {
-    type Err = Error;
-    fn from_str(header: &str) -> Result<Self, Self::Err> {
-        use glib::{Regex, RegexCompileFlags, RegexMatchFlags};
-
-        let regex = Regex::split_simple(
-            r"^3(\d)\s([^\r\n]+)",
-            header,
-            RegexCompileFlags::DEFAULT,
-            RegexMatchFlags::DEFAULT,
-        );
-
-        match regex.get(1) {
-            Some(code) => match code.as_str() {
-                "0" => Ok(Self::Temporary {
-                    target: target(regex.get(2))?,
-                }),
-                "1" => Ok(Self::Permanent {
-                    target: target(regex.get(2))?,
-                }),
-                _ => todo!(),
-            },
-            None => Err(Error::Protocol),
-        }
-    }
-}
-
-fn target(value: Option<&GStringPtr>) -> Result<String, Error> {
-    match value {
-        Some(target) => {
-            let target = target.trim();
-            if target.is_empty() {
-                Err(Error::Target)
-            } else {
-                Ok(target.to_string())
-            }
-        }
-        None => Err(Error::Target),
+        },
+        UriFlags::NONE,
+    ) {
+        Ok(absolute) => Ok(absolute),
+        Err(e) => Err(UriError::ParseRelative(e)),
     }
 }
 
 #[test]
 fn test() {
-    use std::str::FromStr;
-    {
-        let temporary = Redirect::from_str("30 /uri\r\n").unwrap();
-        assert_eq!(temporary.target(), "/uri");
-        assert_eq!(temporary.to_code(), TEMPORARY.0);
-        assert_eq!(temporary.to_string(), TEMPORARY.1);
-
-        let permanent = Redirect::from_str("31 /uri\r\n").unwrap();
-        assert_eq!(permanent.target(), "/uri");
-        assert_eq!(permanent.to_code(), PERMANENT.0);
-        assert_eq!(permanent.to_string(), PERMANENT.1);
+    /// Test common assertion rules
+    fn t(base: &Uri, source: &str, target: &str) {
+        let b = source.as_bytes();
+        let r = Redirect::from_utf8(b).unwrap();
+        assert!(r.uri(base).is_ok_and(|u| u.to_string() == target));
+        assert_eq!(r.as_str(), source);
+        assert_eq!(r.as_bytes(), b);
     }
-    {
-        let base = Uri::build(
-            UriFlags::NONE,
-            "gemini",
-            None,
-            Some("geminiprotocol.net"),
-            -1,
-            "/path/",
-            Some("query"),
-            Some("fragment"),
-        );
-        assert_eq!(
-            Redirect::from_str("30 /uri\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://geminiprotocol.net/uri"
-        );
-        assert_eq!(
-            Redirect::from_str("30 uri\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://geminiprotocol.net/path/uri"
-        );
-        assert_eq!(
-            Redirect::from_str("30 gemini://test.host/uri\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://test.host/uri"
-        );
-        assert_eq!(
-            Redirect::from_str("30 //\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://geminiprotocol.net/"
-        );
-        assert_eq!(
-            Redirect::from_str("30 //geminiprotocol.net/path\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://geminiprotocol.net/path"
-        );
-        assert_eq!(
-            Redirect::from_str("30 //:\r\n")
-                .unwrap()
-                .to_uri(&base)
-                .unwrap()
-                .to_string(),
-            "gemini://geminiprotocol.net/"
-        );
-    }
+    // common base
+    let base = Uri::build(
+        UriFlags::NONE,
+        "gemini",
+        None,
+        Some("geminiprotocol.net"),
+        -1,
+        "/path/",
+        Some("query"),
+        Some("fragment"),
+    );
+    // codes test
+    t(
+        &base,
+        "30 gemini://geminiprotocol.net/path\r\n",
+        "gemini://geminiprotocol.net/path",
+    );
+    t(
+        &base,
+        "31 gemini://geminiprotocol.net/path\r\n",
+        "gemini://geminiprotocol.net/path",
+    );
+    // relative test
+    t(
+        &base,
+        "31 path\r\n",
+        "gemini://geminiprotocol.net/path/path",
+    );
+    t(
+        &base,
+        "31 //geminiprotocol.net\r\n",
+        "gemini://geminiprotocol.net",
+    );
+    t(
+        &base,
+        "31 //geminiprotocol.net/path\r\n",
+        "gemini://geminiprotocol.net/path",
+    );
+    t(&base, "31 /path\r\n", "gemini://geminiprotocol.net/path");
+    t(&base, "31 //:\r\n", "gemini://geminiprotocol.net/");
+    t(&base, "31 //\r\n", "gemini://geminiprotocol.net/");
+    t(&base, "31 /\r\n", "gemini://geminiprotocol.net/");
+    t(&base, "31 ../\r\n", "gemini://geminiprotocol.net/");
+    t(&base, "31 ..\r\n", "gemini://geminiprotocol.net/");
 }
