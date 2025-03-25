@@ -58,11 +58,9 @@ fn main() -> ExitCode {
         None, // optional `GTlsCertificate`
         |result| match result {
             Ok((response, _connection)) => match response {
-                Response::Success(success) => match success {
-                    Success::Default(default) => match default.header.mime().unwrap().as_str() {
-                        "text/gemini" => todo!(),
-                        _ => todo!(),
-                    }
+                Response::Success(success) => match success.mime().unwrap().as_str() {
+                    "text/gemini" => todo!(),
+                    _ => todo!(),
                 },
                 _ => todo!(),
             },
