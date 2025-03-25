@@ -21,7 +21,7 @@ impl Failure {
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
         match buffer.first() {
-            Some(byte) => match byte {
+            Some(b) => match b {
                 b'4' => match Temporary::from_utf8(buffer) {
                     Ok(input) => Ok(Self::Temporary(input)),
                     Err(e) => Err(Error::Temporary(e)),
@@ -30,20 +30,13 @@ impl Failure {
                     Ok(failure) => Ok(Self::Permanent(failure)),
                     Err(e) => Err(Error::Permanent(e)),
                 },
-                _ => Err(Error::Code),
+                b => Err(Error::Code(*b)),
             },
             None => Err(Error::Protocol),
         }
     }
 
     // Getters
-
-    pub fn to_code(&self) -> u8 {
-        match self {
-            Self::Permanent(permanent) => permanent.to_code(),
-            Self::Temporary(temporary) => temporary.to_code(),
-        }
-    }
 
     pub fn message(&self) -> Option<&str> {
         match self {

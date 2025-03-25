@@ -1,24 +1,31 @@
+pub mod bad_request;
+pub mod default;
 pub mod error;
-pub use error::Error;
+pub mod gone;
+pub mod not_found;
+pub mod proxy_request_refused;
 
-const DEFAULT: (u8, &str) = (50, "Unspecified");
-const NOT_FOUND: (u8, &str) = (51, "Not found");
-const GONE: (u8, &str) = (52, "Gone");
-const PROXY_REQUEST_REFUSED: (u8, &str) = (53, "Proxy request refused");
-const BAD_REQUEST: (u8, &str) = (59, "bad-request");
+pub use bad_request::BadRequest;
+pub use default::Default;
+pub use error::Error;
+pub use gone::Gone;
+pub use not_found::NotFound;
+pub use proxy_request_refused::ProxyRequestRefused;
+
+const CODE: u8 = b'5';
 
 /// https://geminiprotocol.net/docs/protocol-specification.gmi#permanent-failure
 pub enum Permanent {
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-50
-    Default { message: Option<String> },
+    Default(Default),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-51-not-found
-    NotFound { message: Option<String> },
+    NotFound(NotFound),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-52-gone
-    Gone { message: Option<String> },
+    Gone(Gone),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-53-proxy-request-refused
-    ProxyRequestRefused { message: Option<String> },
+    ProxyRequestRefused(ProxyRequestRefused),
     /// https://geminiprotocol.net/docs/protocol-specification.gmi#status-59-bad-request
-    BadRequest { message: Option<String> },
+    BadRequest(BadRequest),
 }
 
 impl Permanent {
@@ -26,154 +33,105 @@ impl Permanent {
 
     /// Create new `Self` from buffer include header bytes
     pub fn from_utf8(buffer: &[u8]) -> Result<Self, Error> {
-        use std::str::FromStr;
-        match std::str::from_utf8(buffer) {
-            Ok(header) => Self::from_str(header),
-            Err(e) => Err(Error::Utf8Error(e)),
+        match buffer.first() {
+            Some(b) => match *b {
+                CODE => match buffer.get(1) {
+                    Some(b) => match *b {
+                        b'0' => Ok(Self::Default(
+                            Default::from_utf8(buffer).map_err(Error::Default)?,
+                        )),
+                        b'1' => Ok(Self::NotFound(
+                            NotFound::from_utf8(buffer).map_err(Error::NotFound)?,
+                        )),
+                        b'2' => Ok(Self::Gone(Gone::from_utf8(buffer).map_err(Error::Gone)?)),
+                        b'3' => Ok(Self::ProxyRequestRefused(
+                            ProxyRequestRefused::from_utf8(buffer)
+                                .map_err(Error::ProxyRequestRefused)?,
+                        )),
+                        b'9' => Ok(Self::BadRequest(
+                            BadRequest::from_utf8(buffer).map_err(Error::BadRequest)?,
+                        )),
+                        b => Err(Error::SecondByte(b)),
+                    },
+                    None => Err(Error::UndefinedSecondByte),
+                },
+                b => Err(Error::FirstByte(b)),
+            },
+            None => Err(Error::UndefinedFirstByte),
         }
     }
 
     // Getters
 
-    pub fn to_code(&self) -> u8 {
-        match self {
-            Self::Default { .. } => DEFAULT,
-            Self::NotFound { .. } => NOT_FOUND,
-            Self::Gone { .. } => GONE,
-            Self::ProxyRequestRefused { .. } => PROXY_REQUEST_REFUSED,
-            Self::BadRequest { .. } => BAD_REQUEST,
-        }
-        .0
-    }
-
     pub fn message(&self) -> Option<&str> {
         match self {
-            Self::Default { message } => message,
-            Self::NotFound { message } => message,
-            Self::Gone { message } => message,
-            Self::ProxyRequestRefused { message } => message,
-            Self::BadRequest { message } => message,
+            Self::Default(default) => default.message(),
+            Self::NotFound(not_found) => not_found.message(),
+            Self::Gone(gone) => gone.message(),
+            Self::ProxyRequestRefused(proxy_request_refused) => proxy_request_refused.message(),
+            Self::BadRequest(bad_request) => bad_request.message(),
         }
-        .as_deref()
     }
-}
 
-impl std::fmt::Display for Permanent {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Default { .. } => DEFAULT,
-                Self::NotFound { .. } => NOT_FOUND,
-                Self::Gone { .. } => GONE,
-                Self::ProxyRequestRefused { .. } => PROXY_REQUEST_REFUSED,
-                Self::BadRequest { .. } => BAD_REQUEST,
+    /// Get optional message for `Self`
+    /// * if the optional message not provided by the server, return children `DEFAULT_MESSAGE`
+    pub fn message_or_default(&self) -> &str {
+        match self {
+            Self::Default(default) => default.message_or_default(),
+            Self::NotFound(not_found) => not_found.message_or_default(),
+            Self::Gone(gone) => gone.message_or_default(),
+            Self::ProxyRequestRefused(proxy_request_refused) => {
+                proxy_request_refused.message_or_default()
             }
-            .1
-        )
+            Self::BadRequest(bad_request) => bad_request.message_or_default(),
+        }
     }
-}
 
-impl std::str::FromStr for Permanent {
-    type Err = Error;
-    fn from_str(header: &str) -> Result<Self, Self::Err> {
-        if let Some(postfix) = header.strip_prefix("50") {
-            return Ok(Self::Default {
-                message: message(postfix),
-            });
+    /// Get header string of `Self`
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Default(default) => default.as_str(),
+            Self::NotFound(not_found) => not_found.as_str(),
+            Self::Gone(gone) => gone.as_str(),
+            Self::ProxyRequestRefused(proxy_request_refused) => proxy_request_refused.as_str(),
+            Self::BadRequest(bad_request) => bad_request.as_str(),
         }
-        if let Some(postfix) = header.strip_prefix("51") {
-            return Ok(Self::NotFound {
-                message: message(postfix),
-            });
-        }
-        if let Some(postfix) = header.strip_prefix("52") {
-            return Ok(Self::Gone {
-                message: message(postfix),
-            });
-        }
-        if let Some(postfix) = header.strip_prefix("53") {
-            return Ok(Self::ProxyRequestRefused {
-                message: message(postfix),
-            });
-        }
-        if let Some(postfix) = header.strip_prefix("59") {
-            return Ok(Self::BadRequest {
-                message: message(postfix),
-            });
-        }
-        Err(Error::Code)
     }
-}
 
-// Tools
-
-fn message(value: &str) -> Option<String> {
-    let value = value.trim();
-    if value.is_empty() {
-        None
-    } else {
-        Some(value.to_string())
+    /// Get header bytes of `Self`
+    pub fn as_bytes(&self) -> &[u8] {
+        match self {
+            Self::Default(default) => default.as_bytes(),
+            Self::NotFound(not_found) => not_found.as_bytes(),
+            Self::Gone(gone) => gone.as_bytes(),
+            Self::ProxyRequestRefused(proxy_request_refused) => proxy_request_refused.as_bytes(),
+            Self::BadRequest(bad_request) => bad_request.as_bytes(),
+        }
     }
 }
 
 #[test]
-fn test_from_str() {
-    use std::str::FromStr;
-
+fn test() {
+    fn t(source: &str, message: Option<&str>) {
+        let b = source.as_bytes();
+        let i = Permanent::from_utf8(b).unwrap();
+        assert_eq!(i.message(), message);
+        assert_eq!(i.as_str(), source);
+        assert_eq!(i.as_bytes(), b);
+    }
     // 50
-    let default = Permanent::from_str("50 Message\r\n").unwrap();
-    assert_eq!(default.message(), Some("Message"));
-    assert_eq!(default.to_code(), DEFAULT.0);
-    assert_eq!(default.to_string(), DEFAULT.1);
-
-    let default = Permanent::from_str("50\r\n").unwrap();
-    assert_eq!(default.message(), None);
-    assert_eq!(default.to_code(), DEFAULT.0);
-    assert_eq!(default.to_string(), DEFAULT.1);
-
+    t("50 Message\r\n", Some("Message"));
+    t("50\r\n", None);
     // 51
-    let not_found = Permanent::from_str("51 Message\r\n").unwrap();
-    assert_eq!(not_found.message(), Some("Message"));
-    assert_eq!(not_found.to_code(), NOT_FOUND.0);
-    assert_eq!(not_found.to_string(), NOT_FOUND.1);
-
-    let not_found = Permanent::from_str("51\r\n").unwrap();
-    assert_eq!(not_found.message(), None);
-    assert_eq!(not_found.to_code(), NOT_FOUND.0);
-    assert_eq!(not_found.to_string(), NOT_FOUND.1);
-
+    t("51 Message\r\n", Some("Message"));
+    t("51\r\n", None);
     // 52
-    let gone = Permanent::from_str("52 Message\r\n").unwrap();
-    assert_eq!(gone.message(), Some("Message"));
-    assert_eq!(gone.to_code(), GONE.0);
-    assert_eq!(gone.to_string(), GONE.1);
-
-    let gone = Permanent::from_str("52\r\n").unwrap();
-    assert_eq!(gone.message(), None);
-    assert_eq!(gone.to_code(), GONE.0);
-    assert_eq!(gone.to_string(), GONE.1);
-
+    t("52 Message\r\n", Some("Message"));
+    t("52\r\n", None);
     // 53
-    let proxy_request_refused = Permanent::from_str("53 Message\r\n").unwrap();
-    assert_eq!(proxy_request_refused.message(), Some("Message"));
-    assert_eq!(proxy_request_refused.to_code(), PROXY_REQUEST_REFUSED.0);
-    assert_eq!(proxy_request_refused.to_string(), PROXY_REQUEST_REFUSED.1);
-
-    let proxy_request_refused = Permanent::from_str("53\r\n").unwrap();
-    assert_eq!(proxy_request_refused.message(), None);
-    assert_eq!(proxy_request_refused.to_code(), PROXY_REQUEST_REFUSED.0);
-    assert_eq!(proxy_request_refused.to_string(), PROXY_REQUEST_REFUSED.1);
-
+    t("53 Message\r\n", Some("Message"));
+    t("53\r\n", None);
     // 59
-    let bad_request = Permanent::from_str("59 Message\r\n").unwrap();
-    assert_eq!(bad_request.message(), Some("Message"));
-    assert_eq!(bad_request.to_code(), BAD_REQUEST.0);
-    assert_eq!(bad_request.to_string(), BAD_REQUEST.1);
-
-    let bad_request = Permanent::from_str("59\r\n").unwrap();
-    assert_eq!(bad_request.message(), None);
-    assert_eq!(bad_request.to_code(), BAD_REQUEST.0);
-    assert_eq!(bad_request.to_string(), BAD_REQUEST.1);
+    t("59 Message\r\n", Some("Message"));
+    t("59\r\n", None);
 }
