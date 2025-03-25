@@ -58,6 +58,7 @@ impl Permanent {
 #[test]
 fn test() {
     const BUFFER: &str = "31 gemini://geminiprotocol.net/path\r\n";
+    let bytes = BUFFER.as_bytes();
     let base = Uri::build(
         glib::UriFlags::NONE,
         "gemini",
@@ -68,7 +69,9 @@ fn test() {
         Some("query"),
         Some("fragment"),
     );
-    let permanent = Permanent::from_utf8(BUFFER.as_bytes()).unwrap();
+    let permanent = Permanent::from_utf8(bytes).unwrap();
+    assert_eq!(permanent.as_str(), BUFFER);
+    assert_eq!(permanent.as_bytes(), bytes);
     assert!(permanent.target().is_ok());
     assert!(
         permanent

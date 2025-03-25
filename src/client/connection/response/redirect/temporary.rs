@@ -58,6 +58,7 @@ impl Temporary {
 #[test]
 fn test() {
     const BUFFER: &str = "30 gemini://geminiprotocol.net/path\r\n";
+    let bytes = BUFFER.as_bytes();
     let base = Uri::build(
         glib::UriFlags::NONE,
         "gemini",
@@ -69,6 +70,8 @@ fn test() {
         Some("fragment"),
     );
     let temporary = Temporary::from_utf8(BUFFER.as_bytes()).unwrap();
+    assert_eq!(temporary.as_str(), BUFFER);
+    assert_eq!(temporary.as_bytes(), bytes);
     assert!(temporary.target().is_ok());
     assert!(
         temporary
