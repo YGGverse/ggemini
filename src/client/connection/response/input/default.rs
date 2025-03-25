@@ -59,17 +59,17 @@ impl Default {
 #[test]
 fn test() {
     // ok
-    let default = Default::from_utf8("10 Default\r\n".as_bytes()).unwrap();
-    assert_eq!(default.message(), Some("Default"));
-    assert_eq!(default.message_or_default(), "Default");
-    assert_eq!(default.as_str(), "10 Default\r\n");
-    assert_eq!(default.as_bytes(), "10 Default\r\n".as_bytes());
+    let d = Default::from_utf8("10 Default\r\n".as_bytes()).unwrap();
+    assert_eq!(d.message(), Some("Default"));
+    assert_eq!(d.message_or_default(), "Default");
+    assert_eq!(d.as_str(), "10 Default\r\n");
+    assert_eq!(d.as_bytes(), "10 Default\r\n".as_bytes());
 
-    let default = Default::from_utf8("10\r\n".as_bytes()).unwrap();
-    assert_eq!(default.message(), None);
-    assert_eq!(default.message_or_default(), DEFAULT_MESSAGE);
-    assert_eq!(default.as_str(), "10\r\n");
-    assert_eq!(default.as_bytes(), "10\r\n".as_bytes());
+    let d = Default::from_utf8("10\r\n".as_bytes()).unwrap();
+    assert_eq!(d.message(), None);
+    assert_eq!(d.message_or_default(), DEFAULT_MESSAGE);
+    assert_eq!(d.as_str(), "10\r\n");
+    assert_eq!(d.as_bytes(), "10\r\n".as_bytes());
 
     // err
     assert!(Default::from_utf8("13 Fail\r\n".as_bytes()).is_err());

@@ -59,17 +59,17 @@ impl Sensitive {
 #[test]
 fn test() {
     // ok
-    let sensitive = Sensitive::from_utf8("11 Sensitive\r\n".as_bytes()).unwrap();
-    assert_eq!(sensitive.message(), Some("Sensitive"));
-    assert_eq!(sensitive.message_or_default(), "Sensitive");
-    assert_eq!(sensitive.as_str(), "11 Sensitive\r\n");
-    assert_eq!(sensitive.as_bytes(), "11 Sensitive\r\n".as_bytes());
+    let s = Sensitive::from_utf8("11 Sensitive\r\n".as_bytes()).unwrap();
+    assert_eq!(s.message(), Some("Sensitive"));
+    assert_eq!(s.message_or_default(), "Sensitive");
+    assert_eq!(s.as_str(), "11 Sensitive\r\n");
+    assert_eq!(s.as_bytes(), "11 Sensitive\r\n".as_bytes());
 
-    let sensitive = Sensitive::from_utf8("11\r\n".as_bytes()).unwrap();
-    assert_eq!(sensitive.message(), None);
-    assert_eq!(sensitive.message_or_default(), DEFAULT_MESSAGE);
-    assert_eq!(sensitive.as_str(), "11\r\n");
-    assert_eq!(sensitive.as_bytes(), "11\r\n".as_bytes());
+    let s = Sensitive::from_utf8("11\r\n".as_bytes()).unwrap();
+    assert_eq!(s.message(), None);
+    assert_eq!(s.message_or_default(), DEFAULT_MESSAGE);
+    assert_eq!(s.as_str(), "11\r\n");
+    assert_eq!(s.as_bytes(), "11\r\n".as_bytes());
 
     // err
     assert!(Sensitive::from_utf8("13 Fail\r\n".as_bytes()).is_err());
