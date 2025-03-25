@@ -74,7 +74,7 @@ impl Response {
                     connection,
                 )
             },
-        );
+        )
     }
 }
 
