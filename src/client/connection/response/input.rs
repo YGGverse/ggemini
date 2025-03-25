@@ -48,6 +48,16 @@ impl Input {
         }
     }
 
+    /// Get optional message for `Self`
+    /// * if the optional message not provided by the server, return children `DEFAULT_MESSAGE`
+    pub fn message_or_default(&self) -> &str {
+        match self {
+            Self::Default(default) => default.message_or_default(),
+            Self::Sensitive(sensitive) => sensitive.message_or_default(),
+        }
+    }
+
+    /// Get header string of `Self`
     pub fn as_str(&self) -> &str {
         match self {
             Self::Default(default) => default.as_str(),
@@ -55,6 +65,7 @@ impl Input {
         }
     }
 
+    /// Get header bytes of `Self`
     pub fn as_bytes(&self) -> &[u8] {
         match self {
             Self::Default(default) => default.as_bytes(),
