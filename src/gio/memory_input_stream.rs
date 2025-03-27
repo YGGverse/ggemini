@@ -1,5 +1,8 @@
 pub mod error;
+pub mod size;
+
 pub use error::Error;
+pub use size::Size;
 
 use gio::{
     Cancellable, IOStream, MemoryInputStream,
@@ -17,7 +20,7 @@ pub fn from_stream_async(
     io_stream: impl IsA<IOStream>,
     priority: Priority,
     cancelable: Cancellable,
-    (chunk, limit): (usize, usize),
+    size: Size,
     (on_chunk, on_complete): (
         impl Fn(usize, usize) + 'static,
         impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static,
@@ -28,7 +31,7 @@ pub fn from_stream_async(
         io_stream,
         priority,
         cancelable,
-        (chunk, limit, 0),
+        size,
         (on_chunk, on_complete),
     );
 }
@@ -41,14 +44,14 @@ pub fn for_memory_input_stream_async(
     io_stream: impl IsA<IOStream>,
     priority: Priority,
     cancellable: Cancellable,
-    (chunk, limit, mut total): (usize, usize, usize),
+    mut size: Size,
     (on_chunk, on_complete): (
         impl Fn(usize, usize) + 'static,
         impl FnOnce(Result<(MemoryInputStream, usize), Error>) + 'static,
     ),
 ) {
     io_stream.input_stream().read_bytes_async(
-        chunk,
+        size.chunk,
         priority,
         Some(&cancellable.clone()),
         move |result| match result {
@@ -57,19 +60,23 @@ pub fn for_memory_input_stream_async(
 
                 // is end of stream
                 if len == 0 {
-                    return on_complete(Ok((memory_input_stream, total)));
+                    return on_complete(Ok((memory_input_stream, size.total)));
                 }
 
                 // callback chunk function
-                total += len;
-                on_chunk(len, total);
+                size.total += len;
+                on_chunk(len, size.total);
 
                 // push bytes into the memory pool
                 memory_input_stream.add_bytes(&bytes);
 
                 // prevent memory overflow
-                if total > limit {
-                    return on_complete(Err(Error::BytesTotal(memory_input_stream, total, limit)));
+                if size.total > size.limit {
+                    return on_complete(Err(Error::BytesTotal(
+                        memory_input_stream,
+                        size.total,
+                        size.limit,
+                    )));
                 }
 
                 // handle next chunk..
@@ -78,7 +85,7 @@ pub fn for_memory_input_stream_async(
                     io_stream,
                     priority,
                     cancellable,
-                    (chunk, limit, total),
+                    size,
                     (on_chunk, on_complete),
                 )
             }

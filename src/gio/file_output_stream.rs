@@ -1,19 +1,14 @@
 pub mod error;
+pub mod size;
+
 pub use error::Error;
+pub use size::Size;
 
 use gio::{
     Cancellable, FileOutputStream, IOStream,
     prelude::{IOStreamExt, InputStreamExt, OutputStreamExtManual},
 };
 use glib::{Bytes, Priority, object::IsA};
-
-/// Mutable bytes count
-pub struct Size {
-    pub chunk: usize,
-    /// `None` for unlimited
-    pub limit: Option<usize>,
-    pub total: usize,
-}
 
 /// Asynchronously move all bytes from [IOStream](https://docs.gtk.org/gio/class.IOStream.html)
 /// to [FileOutputStream](https://docs.gtk.org/gio/class.FileOutputStream.html)
