@@ -80,14 +80,14 @@ impl Client {
                                     server_certificates,
                                     is_session_resumption,
                                 ) {
-                                    Ok(connection) => connection.request_async(
+                                    Ok(connection) => connection.clone().request_async(
                                         request,
                                         priority,
                                         cancellable,
                                         move |result| {
                                             callback(match result {
                                                 Ok(response) => Ok(response),
-                                                Err(e) => Err(Error::Request(e)),
+                                                Err(e) => Err(Error::Request(connection, e)),
                                             })
                                         },
                                     ),

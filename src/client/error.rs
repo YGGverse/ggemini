@@ -5,7 +5,10 @@ pub enum Error {
     Connect(gio::NetworkAddress, glib::Error),
     Connection(gio::SocketConnection, crate::client::connection::Error),
     NetworkAddress(crate::client::connection::request::Error),
-    Request(crate::client::connection::Error),
+    Request(
+        crate::client::connection::Connection,
+        crate::client::connection::Error,
+    ),
 }
 
 impl Display for Error {
@@ -20,7 +23,7 @@ impl Display for Error {
             Self::NetworkAddress(e) => {
                 write!(f, "Network address error: {e}")
             }
-            Self::Request(e) => {
+            Self::Request(_, e) => {
                 write!(f, "Connection error: {e}")
             }
         }

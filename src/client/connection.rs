@@ -15,6 +15,7 @@ use glib::{
     object::{Cast, ObjectExt},
 };
 
+#[derive(Debug, Clone)]
 pub struct Connection {
     pub network_address: NetworkAddress,
     pub socket_connection: SocketConnection,
