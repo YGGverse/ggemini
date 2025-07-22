@@ -96,7 +96,7 @@ impl Client {
                                     }
                                 }
                             }
-                            Err(e) => callback(Err(Error::Connect(e))),
+                            Err(e) => callback(Err(Error::Connect(network_address, e))),
                         }
                     })
             }
