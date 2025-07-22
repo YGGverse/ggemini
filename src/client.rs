@@ -59,7 +59,8 @@ impl Client {
         request: Request,
         priority: Priority,
         cancellable: Cancellable,
-        certificate: Option<TlsCertificate>,
+        client_certificate: Option<TlsCertificate>,
+        server_certificates: Option<Vec<TlsCertificate>>,
         callback: impl FnOnce(Result<(Response, Connection), Error>) + 'static,
     ) {
         // Begin new connection
@@ -75,7 +76,8 @@ impl Client {
                                 match Connection::build(
                                     socket_connection,
                                     network_address,
-                                    certificate,
+                                    client_certificate,
+                                    server_certificates,
                                     is_session_resumption,
                                 ) {
                                     Ok(connection) => connection.request_async(

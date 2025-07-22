@@ -55,7 +55,8 @@ fn main() -> ExitCode {
         },
         Priority::DEFAULT,
         Cancellable::new(),
-        None, // optional `GTlsCertificate`
+        None, // optional auth `GTlsCertificate`
+        None, // optional TOFU `GTlsCertificate` array
         |result| match result {
             Ok((response, _connection)) => match response {
                 Response::Success(success) => match success.mime().unwrap().as_str() {

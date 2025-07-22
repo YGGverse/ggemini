@@ -6,11 +6,9 @@ pub use error::Error;
 pub use request::{Mode, Request};
 pub use response::Response;
 
-// Local dependencies
-
 use gio::{
     Cancellable, IOStream, NetworkAddress, SocketConnection, TlsCertificate, TlsClientConnection,
-    prelude::{IOStreamExt, OutputStreamExtManual, TlsConnectionExt},
+    prelude::{IOStreamExt, OutputStreamExtManual, TlsCertificateExt, TlsConnectionExt},
 };
 use glib::{
     Bytes, Priority,
@@ -30,17 +28,19 @@ impl Connection {
     pub fn build(
         socket_connection: SocketConnection,
         network_address: NetworkAddress,
-        certificate: Option<TlsCertificate>,
+        client_certificate: Option<TlsCertificate>,
+        server_certificates: Option<Vec<TlsCertificate>>,
         is_session_resumption: bool,
     ) -> Result<Self, Error> {
         Ok(Self {
             tls_client_connection: match new_tls_client_connection(
                 &socket_connection,
                 Some(&network_address),
+                server_certificates,
                 is_session_resumption,
             ) {
                 Ok(tls_client_connection) => {
-                    if let Some(ref c) = certificate {
+                    if let Some(ref c) = client_certificate {
                         tls_client_connection.set_certificate(c);
                     }
                     tls_client_connection
@@ -136,6 +136,7 @@ impl Connection {
 fn new_tls_client_connection(
     socket_connection: &SocketConnection,
     server_identity: Option<&NetworkAddress>,
+    server_certificates: Option<Vec<TlsCertificate>>,
     is_session_resumption: bool,
 ) -> Result<TlsClientConnection, Error> {
     match TlsClientConnection::new(socket_connection, server_identity) {
@@ -149,9 +150,19 @@ fn new_tls_client_connection(
             // https://geminiprotocol.net/docs/protocol-specification.gmi#closing-connections
             tls_client_connection.set_require_close_notify(true);
 
-            // @TODO validate
-            // https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation
-            tls_client_connection.connect_accept_certificate(|_, _, _| true);
+            // [TOFU](https://geminiprotocol.net/docs/protocol-specification.gmi#tls-server-certificate-validation)
+            tls_client_connection.connect_accept_certificate(move |_, c, _| {
+                server_certificates
+                    .as_ref()
+                    .is_none_or(|server_certificates| {
+                        for server_certificate in server_certificates {
+                            if server_certificate.is_same(c) {
+                                return true;
+                            }
+                        }
+                        false
+                    })
+            });
 
             Ok(tls_client_connection)
         }
