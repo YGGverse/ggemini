@@ -74,7 +74,7 @@ impl Client {
                         move |result| match result {
                             Ok(socket_connection) => {
                                 match Connection::build(
-                                    socket_connection,
+                                    socket_connection.clone(),
                                     network_address,
                                     client_certificate,
                                     server_certificates,
@@ -87,18 +87,20 @@ impl Client {
                                         move |result| {
                                             callback(match result {
                                                 Ok(response) => Ok(response),
-                                                Err(e) => Err(Error::Connection(e)),
+                                                Err(e) => Err(Error::Request(e)),
                                             })
                                         },
                                     ),
-                                    Err(e) => callback(Err(Error::Connection(e))),
+                                    Err(e) => {
+                                        callback(Err(Error::Connection(socket_connection, e)))
+                                    }
                                 }
                             }
                             Err(e) => callback(Err(Error::Connect(e))),
                         }
                     })
             }
-            Err(e) => callback(Err(Error::Request(e))),
+            Err(e) => callback(Err(Error::NetworkAddress(e))),
         }
     }
 
