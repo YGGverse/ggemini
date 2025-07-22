@@ -39,7 +39,7 @@ pub fn from_stream_async(
                     }
                 }
 
-                if bytes.len() == 0 {
+                if bytes.is_empty() {
                     return on_complete(Ok((file_output_stream, size.total)));
                 }
 
