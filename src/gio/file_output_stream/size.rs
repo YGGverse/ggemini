@@ -5,3 +5,13 @@ pub struct Size {
     pub limit: Option<usize>,
     pub total: usize,
 }
+
+impl Default for Size {
+    fn default() -> Self {
+        Self {
+            chunk: 0x10000, // 64KB
+            limit: None,
+            total: 0,
+        }
+    }
+}
