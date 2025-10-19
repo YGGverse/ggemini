@@ -33,10 +33,10 @@ pub fn from_stream_async(
                 size.total += bytes.len();
                 on_chunk(bytes.clone(), size.total);
 
-                if let Some(limit) = size.limit {
-                    if size.total > limit {
-                        return on_complete(Err(Error::BytesTotal(size.total, limit)));
-                    }
+                if let Some(limit) = size.limit
+                    && size.total > limit
+                {
+                    return on_complete(Err(Error::BytesTotal(size.total, limit)));
                 }
 
                 if bytes.is_empty() {
