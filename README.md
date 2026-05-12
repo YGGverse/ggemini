@@ -1,7 +1,8 @@
 # ggemini
 
-![Build](https://github.com/YGGverse/ggemini/actions/workflows/build.yml/badge.svg)
-[![Documentation](https://docs.rs/ggemini/badge.svg)](https://docs.rs/ggemini)
+![build](https://github.com/YGGverse/ggemini/actions/workflows/build.yml/badge.svg)
+[![dependencies](https://deps.rs/repo/github/YGGverse/ggemini/status.svg)](https://deps.rs/repo/github/YGGverse/ggemini)
+[![documentation](https://docs.rs/ggemini/badge.svg)](https://docs.rs/ggemini)
 [![crates.io](https://img.shields.io/crates/v/ggemini.svg)](https://crates.io/crates/ggemini)
 
 Glib/Gio-oriented network API for [Gemini protocol](https://geminiprotocol.net/)
